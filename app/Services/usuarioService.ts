@@ -1,6 +1,6 @@
 // services/usuarioService.ts
 
-const API_URL = 'http://localhost:3001/usuario';
+const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/usuario`;
 
 export async function registerUsuario(userData: any) {
   try {
