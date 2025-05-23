@@ -1,11 +1,50 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { SiteLayout } from "@/components/site-layout"
 import { Calendar, BookOpen, Users, Award, Clock, MapPin } from "lucide-react"
 import './globals.css'
+import { useEffect, useState } from "react"
+import * as contenidoHomeService from "./Services/contenidoHomeService"
 
 export default function Home() {
+  const [contenido, setContenido] = useState<any>(null)
+  useEffect(() => {
+    async function fetchContenido() {
+      try {
+        const data = await contenidoHomeService.getContenidoHome()
+        setContenido(data)
+      } catch (error) {
+        setContenido([])
+      }
+    }
+    fetchContenido()
+  }, [])
+
+  // Mostrar loading
+  if (!contenido) {
+    return (
+      <SiteLayout>
+        <div className="flex justify-center items-center min-h-screen">
+          <span>Cargando contenido...</span>
+        </div>
+      </SiteLayout>
+    )
+  }
+
+  // Mostrar error si la respuesta no es un array
+  if (!Array.isArray(contenido)) {
+    return (
+      <SiteLayout>
+        <div className="flex justify-center items-center min-h-screen">
+          <span>Error al cargar el contenido.</span>
+        </div>
+      </SiteLayout>
+    )
+  }
+
   return (
     <SiteLayout>
       {/* Hero Section */}
@@ -82,6 +121,26 @@ export default function Home() {
               <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-primary/10 rounded-full"></div>
               <div className="absolute -top-6 -right-6 w-32 h-32 bg-primary/10 rounded-full"></div>
             </div>
+          </div>
+        </div>
+      </section>
+
+       {/* Contenido Home dinámico */}
+      <section className="py-16 bg-white">
+        <div className="container px-4 mx-auto">
+          <h2 className="text-3xl font-bold mb-8 text-center">Contenido Home</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {contenido.map((item: any) => (
+              <div key={item.id_contenido} className="bg-white rounded-lg border border-primary/10 shadow-sm p-6">
+                <h3 className="text-xl font-bold mb-2">{item.titulo}</h3>
+                <p className="text-muted-foreground mb-2">{item.descripcion}</p>
+                {item.url_foto && item.url_foto !== '.' && (
+                  <div className="mt-4">
+                    <Image src={item.url_foto} alt={item.titulo} width={200} height={120} className="rounded" />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -265,6 +324,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+     
 
       {/* Testimonials */}
       <section className="py-16 bg-red-50">
@@ -333,6 +393,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      
 
       {/* CTA Section */}
       <section className="py-20 bg-primary">
