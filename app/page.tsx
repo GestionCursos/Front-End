@@ -8,9 +8,14 @@ import { Calendar, BookOpen, Users, Award, Clock, MapPin } from "lucide-react"
 import './globals.css'
 import { useEffect, useState } from "react"
 import * as contenidoHomeService from "./Services/contenidoHomeService"
+import * as autoridadesService from "./Services/autoridadesService"
 
 export default function Home() {
   const [contenido, setContenido] = useState<any>(null)
+  const [autoridades, setAutoridades] = useState<any[]>([])
+  const [showFullDesc, setShowFullDesc] = useState<{ [id: number]: boolean }>({})
+  const [modalAutoridad, setModalAutoridad] = useState<any | null>(null)
+
   useEffect(() => {
     async function fetchContenido() {
       try {
@@ -21,6 +26,18 @@ export default function Home() {
       }
     }
     fetchContenido()
+  }, [])
+
+  useEffect(() => {
+    async function fetchAutoridades() {
+      try {
+        const data = await autoridadesService.getAutoridades()
+        setAutoridades(Array.isArray(data) ? data.filter(a => a.visible) : [])
+      } catch (error) {
+        setAutoridades([])
+      }
+    }
+    fetchAutoridades()
   }, [])
 
   // Mostrar loading
@@ -109,9 +126,9 @@ export default function Home() {
             </div>
             <div className="lg:w-1/2 relative">
               <div className="relative rounded-lg overflow-hidden shadow-2xl border border-primary/10">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 "></div>
                 <Image
-                  src="/placeholder.svg?height=600&width=800"
+                  src="https://csei.uta.edu.ec/csei2021/images/galeria-uta/facultad1.jpg"
                   alt="Evento de EduEvents"
                   width={800}
                   height={600}
@@ -125,18 +142,105 @@ export default function Home() {
         </div>
       </section>
 
-       {/* Contenido Home dinámico */}
-      <section className="py-16 bg-white">
+       {/* Autoridades */}
+      <section className="py-16 bg-gradient-to-b from-red-50 to-white">
         <div className="container px-4 mx-auto">
-          <h2 className="text-3xl font-bold mb-8 text-center">Contenido Home</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 text-primary">Nuestras autoridades</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Conoce a quienes lideran nuestra institución.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {autoridades.map((autoridad: any) => {
+              const maxDescLength = 320;
+              const isLong = autoridad.descripcion.length > maxDescLength;
+             
+              return (
+                <div key={autoridad.id_autoridad} className="flex flex-col items-center bg-white rounded-2xl shadow-xl border border-primary/10 p-6 hover:shadow-2xl transition-shadow relative min-h-[370px] max-w-xs mx-auto group">
+                  <div className="relative w-28 h-28 rounded-full overflow-hidden shadow mb-4 border-4 border-primary/20 bg-white flex items-center justify-center">
+                    <Image
+                      src={autoridad.foto_url}
+                      alt={autoridad.nombre}
+                      fill
+                      className="object-contain"
+                      style={{ objectPosition: 'center top' }}
+                    />
+                  </div>
+                  <h4 className="font-extrabold text-lg text-primary mb-1 text-center uppercase tracking-wide leading-tight group-hover:text-primary/80 transition-colors">{autoridad.nombre}</h4>
+                  <p className="text-xs text-primary/70 mb-2 text-center font-semibold uppercase tracking-wider leading-tight">{autoridad.cargo}</p>
+                  <div className="relative w-full flex-1 flex flex-col">
+                    <div className="text-xs text-muted-foreground text-justify w-full px-0" style={{lineHeight: '1.5', maxHeight: '7.5em', overflow: 'hidden', position: 'relative'}}>
+                      {autoridad.descripcion.slice(0, 400)}{autoridad.descripcion.length > 400 ? '...' : ''}
+                    </div>
+                    {autoridad.descripcion.length > 400 && (
+                      <div className="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-auto text-primary border-primary/40 text-xs font-semibold hover:bg-primary/10 focus:outline-none px-4 py-1.5 shadow-sm"
+                    onClick={() => setModalAutoridad(autoridad)}
+                    type="button"
+                  >
+                    Ver más
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+
+      {/* Modal para mostrar información completa de la autoridad */}
+      {modalAutoridad && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-2xl p-0 max-w-md w-[95vw] max-h-[90vh] relative flex flex-col animate-fade-in">
+            <button
+              className="absolute top-2 right-2 text-primary text-2xl font-bold hover:text-red-500 z-10"
+              onClick={() => setModalAutoridad(null)}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+            <div className="flex flex-col items-center p-6 overflow-y-auto" style={{maxHeight: '80vh'}}>
+              <div className="relative w-24 h-24 rounded-full overflow-hidden shadow mb-4 border-2 border-primary/20 bg-white flex items-center justify-center">
+                <Image
+                  src={modalAutoridad.foto_url}
+                  alt={modalAutoridad.nombre}
+                  fill
+                  className="object-contain"
+                  style={{ objectPosition: 'center top' }}
+                />
+              </div>
+              <h4 className="font-bold text-lg text-primary mb-1 text-center uppercase tracking-wide">{modalAutoridad.nombre}</h4>
+              <p className="text-sm text-primary/80 mb-3 text-center font-semibold uppercase tracking-wider">{modalAutoridad.cargo}</p>
+              <div className="text-sm text-muted-foreground text-justify w-full px-0" style={{lineHeight: '1.6'}}>
+                {modalAutoridad.descripcion.split(/(TERCER NIVEL|CUARTO NIVEL|DOCTORADO|MAESTR[ÍI]A|DIPLOMA[DT]O|LICENCIAD[OA]|INGENIER[OA]|ECONOMISTA|PSIC[ÓO]LOG[OA]|ABOGAD[OA]|PROFESOR[AE]|T[ÉE]CNIC[OA]|MAGISTER|DOCTORA?)/gi).map((part: string, idx: number) => {
+                  if (["TERCER NIVEL","CUARTO NIVEL","DOCTORADO","MAESTRÍA","MAESTRIA","DIPLOMADO","DIPLOMATA","LICENCIADO","LICENCIADA","INGENIERO","INGENIERA","ECONOMISTA","PSICÓLOGA","PSICÓLOGO","ABOGADA","ABOGADO","PROFESORA","PROFESOR","TÉCNICO","TÉCNICA","MAGISTER","DOCTORA","DOCTOR"].includes(part.trim().toUpperCase())) {
+                    return <div key={idx} className="mt-2 mb-1 font-bold text-primary/90 text-xs tracking-widest uppercase">{part}</div>;
+                  }
+                  return <span key={idx}>{part}</span>;
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        </div>
+      </section>
+
+       {/* Contenido Home dinámico */}
+      <section className="py-16 bg-gradient-to-b from-primary/5 to-white">
+        <div className="container px-4 mx-auto">
+          <h2 className="text-3xl font-bold mb-8 text-center text-primary">Recursos destacados</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {contenido.map((item: any) => (
-              <div key={item.id_contenido} className="bg-white rounded-lg border border-primary/10 shadow-sm p-6">
-                <h3 className="text-xl font-bold mb-2">{item.titulo}</h3>
+              <div key={item.id_contenido} className="bg-white rounded-2xl border-2 border-primary/20 shadow-md p-6 flex flex-col items-start hover:shadow-xl transition-shadow">
+                <h3 className="text-xl font-bold mb-2 text-primary/90">{item.titulo}</h3>
                 <p className="text-muted-foreground mb-2">{item.descripcion}</p>
                 {item.url_foto && item.url_foto !== '.' && (
-                  <div className="mt-4">
-                    <Image src={item.url_foto} alt={item.titulo} width={200} height={120} className="rounded" />
+                  <div className="mt-4 w-full flex justify-center">
+                    <Image src={item.url_foto} alt={item.titulo} width={240} height={140} className="rounded-lg border border-primary/10 shadow-sm object-cover max-h-36" />
                   </div>
                 )}
               </div>
@@ -325,76 +429,6 @@ export default function Home() {
         </div>
       </section>
      
-
-      {/* Testimonials */}
-      <section className="py-16 bg-red-50">
-        <div className="container px-4 mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Lo que dicen nuestros alumnos</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Descubre las experiencias de quienes ya han participado en nuestros eventos y cursos.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: "Ana García",
-                role: "Desarrolladora Frontend",
-                testimonial:
-                  "Los cursos de EduEvents han transformado mi carrera. El contenido es excelente y los instructores son verdaderos expertos en su campo.",
-                image: "/placeholder.svg?height=100&width=100",
-              },
-              {
-                name: "Miguel Rodríguez",
-                role: "UX Designer",
-                testimonial:
-                  "Participar en los workshops de diseño me ha permitido conectar con otros profesionales y mejorar significativamente mis habilidades.",
-                image: "/placeholder.svg?height=100&width=100",
-              },
-              {
-                name: "Laura Fernández",
-                role: "Marketing Manager",
-                testimonial:
-                  "La calidad de los eventos es excepcional. He asistido a varias conferencias y siempre regreso con nuevas ideas y contactos valiosos.",
-                image: "/placeholder.svg?height=100&width=100",
-              },
-            ].map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-primary/10">
-                <div className="flex items-center mb-4">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
-                    <Image
-                      src={testimonial.image || "/placeholder.svg"}
-                      alt={testimonial.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-medium">{testimonial.name}</h4>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="text-muted-foreground italic">"{testimonial.testimonial}"</p>
-                <div className="flex mt-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className="w-4 h-4 text-yellow-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      
 
       {/* CTA Section */}
       <section className="py-20 bg-primary">
