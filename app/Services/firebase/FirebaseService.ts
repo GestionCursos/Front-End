@@ -21,18 +21,28 @@ class FirebaseService {
             const user = userCredential.user;
             const idToken = await user.getIdToken();
             const verifyE = await user.emailVerified;
+            const rol = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/usuario/rol`, {
+                headers: {
+                    "Authorization": `Bearer ${idToken}`
+                }
+            });
+            const rolData = await rol.json();
             //agregar el obtener foto de usuario
-            if (!verifyE) return alert("verifica tu correo Electronico")
+            if (!verifyE) {
+                alert("verifica tu correo Electronico")
+                await sendEmailVerification(userCredential.user, { url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/login` });
+            }
+
             StorageNavegador.saveToLocalStorageWithExpiry(
                 "user", {
                 email: email,
                 verify: verifyE,
                 uidFirebase: idToken,
-                username: userName,
-                urlUserImg: null
+                username: rolData.username,
+                urlUserImg: rolData.urlUserImg ? rolData.urlUserImg : await this.getImgUser(rolData.username),
+                rol: rolData.rol,
             }, 60 * 60 * 1000
             );
-
         } catch (error) {
             console.error("Error de autenticación:", error);
             return true;
