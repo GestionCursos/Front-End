@@ -35,9 +35,10 @@ class FirebaseService {
 
             StorageNavegador.saveToLocalStorageWithExpiry(
                 "user", {
+                uid: user.uid,
                 email: email,
                 verify: verifyE,
-                uidFirebase: idToken,
+                token: idToken,
                 username: rolData.username,
                 urlUserImg: rolData.urlUserImg ? rolData.urlUserImg : await this.getImgUser(rolData.username),
                 rol: rolData.rol,
@@ -57,12 +58,15 @@ class FirebaseService {
             await sendEmailVerification(userCredential.user, { url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/login` });
             //agregar el obtener foto de usuario
             const verifyE = await user.emailVerified;
-            if (!verifyE) return alert("verifica tu correo Electronico")
+            if (!verifyE) {
+                alert("verifica tu correo Electronico");
+            }
             StorageNavegador.saveToLocalStorageWithExpiry(
                 "user", {
+                uid: user.uid,
                 email: email,
                 verify: verifyE,
-                uidFirebase: idToken,
+                token: idToken,
                 username: username,
                 urlUserImg: null
             }, 60 * 60 * 1000);
