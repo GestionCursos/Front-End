@@ -1,8 +1,9 @@
-interface User {
+interface Users {
+    uid?: string,
     email?: string;
     verify?: Boolean;
-    uidFirebase?: string;
+    token: string;
     username?: string;
     urlUserImg?: string;
 }
-export default User;
+export default Users;
