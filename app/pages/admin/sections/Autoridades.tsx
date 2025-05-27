@@ -81,4 +81,67 @@ const [fotoFile, setFotoFile] = useState<File | null>(null);
         }
     };
 
+    // Todo el JSX del return
+    return (
+        <div className="min-h-screen bg-gray-50 p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-semibold">Lista de Autoridades</h1>
+                <button
+                    onClick={() => console.log("Crear autoridad")}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                >
+                    Crear Autoridad
+                </button>
+            </div>
+
+            {loading ? (
+                <p className="text-gray-500">Cargando autoridades...</p>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {data.map((autoridad) => (
+                        <div key={autoridad.id_autoridad} className="bg-white shadow-md rounded-xl p-4 flex flex-col items-center text-center">
+                            <img
+                                src={autoridad.foto_url}
+                                alt={autoridad.nombre}
+                                className="w-32 h-32 object-cover rounded-full mb-4"
+                            />
+                            <h2 className="text-lg font-bold">{autoridad.nombre}</h2>
+                            <p className="text-sm text-gray-600 mb-2">{autoridad.cargo}</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-line mb-4">{autoridad.descripcion}</p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleEditar(autoridad.id_autoridad)}
+                                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                                >
+                                    Editar
+                                </button>
+                                <button
+                                    onClick={() => console.log("Eliminar autoridad", autoridad.id_autoridad)}
+                                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {editando && (
+                <FormularioEdicion
+                    autoridad={editando}
+                    formData={formData}
+                    setFormData={setFormData}
+                    previewUrl={previewUrl}
+                    setPreviewUrl={setPreviewUrl}
+                    fotoFile={fotoFile}
+                    setFotoFile={setFotoFile}
+                    handleChange={handleChange}
+                    handleGuardar={handleGuardar}
+                    handleFileChange={handleFileChange}
+                    setEditando={setEditando}
+                />
+            )}
+        </div>
+    );
 }
