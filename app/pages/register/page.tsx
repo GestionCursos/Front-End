@@ -22,6 +22,8 @@ import { registerUsuario } from "../../Services/usuarioService"
 import FirebaseService from "@/app/Services/firebase/FirebaseService"
 
 import '@/app/globals.css'
+import StorageNavegador from "@/app/Services/StorageNavegador"
+import Users from "@/app/models/User"
 
 type RegisterFormValues = z.infer<typeof registerSchema>
 
@@ -33,6 +35,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [interestArea, setInterestArea] = useState("")
+
+  // Estado para manejar la imagen de perfil
+  const [file, setFile] = useState<File | null>(null);
+
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -49,21 +55,25 @@ export default function RegisterPage() {
   })
 
   const password = form.watch("password")
-
+  
   const onSubmit = async (values: RegisterFormValues) => {
     setError("")
     setSuccess("")
     setIsPending(true)
-
+    
     try {
-      // Registrar usuario en Firebase y obtener el UID
-      const firebaseAuth = await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
-      const auth = getAuth();
-      const user = auth.currentUser;
-      const uidFirebase = user ? user.uid : undefined;
+      // Registrar usuario en Firebase y se almacenan sus credenciales en el localstorage
+      await FirebaseService.registerWithEmailAndPassword(values.email, values.password, values.firstName)
+      
+      const user = StorageNavegador.getItemWithExpiry("user") as Users;
+      // Subir imagen a Firebase Storage si existe
+      let profileImageUrl = ""
+      if (file && user?.uid) {
+        const userUid = user?.uid ?? "";
+        profileImageUrl = (await FirebaseService.uploadFile(file, userUid, "user.png")) ?? ""
+      }
 
       const response = await registerUsuario({
-        uid_firebase: uidFirebase, // Ahora usa el UID real de Firebase
         nombres: values.firstName,
         apellidos: values.lastName,
         correo: values.email,
@@ -72,13 +82,12 @@ export default function RegisterPage() {
         rol: "estudiante",
         carrera: interestArea,
         estado: "activo",
-        password: values.password,
-        url_foto: values.profileImage ? await toBase64(values.profileImage) : "https://example.com/foto.jpg",
+        url_foto: profileImageUrl,
       })
 
       setSuccess("Tu cuenta ha sido creada correctamente")
       setTimeout(() => {
-        router.push("/login")
+        router.push("/pages/login")
       }, 1500)
     } catch (error: any) {
       setError(error.message || "Error al registrar el usuario")
@@ -88,7 +97,7 @@ export default function RegisterPage() {
   }
 
   const handleImageChange = (file: File | null) => {
-    form.setValue("profileImage", file || undefined)
+    setFile(file);
   }
 
   // Helper function to convert File to base64 string
@@ -279,7 +288,7 @@ export default function RegisterPage() {
                 </Button>
                 <div className="text-center text-sm">
                   ¿Ya tienes una cuenta?{" "}
-                  <Link href="/login" className="text-primary hover:underline font-medium">
+                  <Link href="/pages/login" className="text-primary hover:underline font-medium">
                     Acceder
                   </Link>
                 </div>

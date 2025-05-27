@@ -18,10 +18,22 @@ import { loginSchema } from "@/lib/validations/auth"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import FirebaseService from "@/app/Services/firebase/FirebaseService"
 import '../../globals.css'
+import StorageNavegador from "@/app/Services/StorageNavegador"
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  setTimeout(() => {
+    const user = StorageNavegador.getItemWithExpiry("user");
+    if (user) {
+      if (user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
+        router.push("/pages/dashboard")
+      } else {
+        router.push("/pages/admin")
+      }
+    }
+  })
+
   const router = useRouter()
   const [error, setError] = useState<string | undefined>("")
   const [success, setSuccess] = useState<string | undefined>("")
@@ -52,8 +64,13 @@ export default function LoginPage() {
       }
       setSuccess("Has iniciado sesión correctamente")
       setTimeout(() => {
-        router.push("/dashboard")
-      }, 1000)
+        const user = StorageNavegador.getItemWithExpiry("user");
+        if (user && typeof user === "object" && "rol" in user && (user as any).rol !== "admin") {
+          router.push("/pages/dashboard")
+        } else {
+          router.push("/pages/admin")
+        }
+      })
     } catch (error) {
       setError("Credenciales incorrectas. Por favor, inténtalo de nuevo.")
     } finally {
