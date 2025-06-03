@@ -8,7 +8,7 @@ const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/usuario`;
 export async function registerUsuario(userData: any) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
-    const token=user?.token;
+    const token = user?.token;
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
@@ -16,6 +16,29 @@ export async function registerUsuario(userData: any) {
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error registrando usuario');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function obtenerListaUsuarios(id:number) {
+  try {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const token = user?.token;
+    const response = await fetch(`${API_URL}/evento/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`
+      },
     });
 
     if (!response.ok) {
