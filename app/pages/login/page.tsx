@@ -39,6 +39,10 @@ export default function LoginPage() {
   const [success, setSuccess] = useState<string | undefined>("")
   const [isPending, setIsPending] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showReset, setShowReset] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
+  const [resetMsg, setResetMsg] = useState<string | null>(null)
+  const [resetError, setResetError] = useState<string | null>(null)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -80,6 +84,70 @@ export default function LoginPage() {
 
   return (
     <SiteLayout>
+      {/* Modal de recuperación de contraseña */}
+      {showReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h2 className="text-lg font-bold mb-2">Recuperar contraseña</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Ingresa tu correo y recibirás instrucciones para restablecer tu contraseña.
+            </p>
+            <Input
+              type="email"
+              placeholder="Correo electrónico"
+              value={resetEmail}
+              onChange={e => setResetEmail(e.target.value)}
+              className="mb-2"
+            />
+            {resetMsg && (
+              <div className="flex items-center justify-center gap-2 text-green-700 bg-green-100 border border-green-300 rounded px-3 py-2 mb-2 animate-fade-in">
+                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                <span>{resetMsg}</span>
+              </div>
+            )}
+            {resetError && (
+              <div className="flex items-center justify-center gap-2 text-red-700 bg-red-100 border border-red-300 rounded px-3 py-2 mb-2 animate-fade-in">
+                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <span>{resetError}</span>
+              </div>
+            )}
+            <div className="flex gap-2 mt-2">
+              <Button
+                onClick={async () => {
+                  setResetMsg(null)
+                  setResetError(null)
+                  try {
+                    await FirebaseService.resetPassword(resetEmail)
+                    setResetMsg("¡Correo de recuperación enviado!")
+                    setTimeout(() => {
+                      setShowReset(false)
+                      setResetMsg(null)
+                      setResetError(null)
+                    }, 1200)
+                  } catch (err: any) {
+                    setResetError("No se pudo enviar el correo. Verifica el email.")
+                  }
+                }}
+                className="w-full"
+                disabled={resetMsg !== null}
+              >
+                {resetMsg ? "Enviado" : "Enviar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowReset(false)
+                  setResetMsg(null)
+                  setResetError(null)
+                }}
+                className="w-full"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="py-16 bg-gradient-to-b from-red-50 to-white">
         <div className="container px-4 mx-auto">
           <Card className="w-full max-w-md mx-auto auth-card">
@@ -104,9 +172,13 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Contraseña</Label>
-                    <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                    <button
+                      type="button"
+                      className="text-sm text-primary hover:underline bg-transparent border-none p-0"
+                      onClick={() => setShowReset(true)}
+                    >
                       ¿Olvidaste tu contraseña?
-                    </Link>
+                    </button>
                   </div>
                   <div className="relative">
                     <Input
