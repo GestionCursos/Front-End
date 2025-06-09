@@ -41,12 +41,20 @@ const navItems = [
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
-
-  const user = StorageNavegador.getItemWithExpiry("user") as Users;
-
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [user, setUser] = useState<Users | null>(null);
   const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const storedUser = StorageNavegador.getItemWithExpiry("user") as Users | null;
+    if (!storedUser) {
+      router.push("/pages/login");
+    } else {
+      setUser(storedUser);
+    }
+  }, [router]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -61,9 +69,12 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
+  if (!user) return null;
   return (
     <aside className="w-64 h-screen flex flex-col justify-between bg-white border-r px-4 py-6">
       {/* Navegación */}
@@ -71,7 +82,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
         <h2 className="text-lg font-bold text-red-700 mb-6 px-2">Panel</h2>
         <nav className="space-y-1">
           {navItems
-            .filter(item => item.rolesPermitidos.includes(user.rol)) 
+            .filter(item => user && item.rolesPermitidos.includes(user.rol))
             .map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
