@@ -224,8 +224,8 @@ export default function LoginPage() {
                 </Button>
                 <div className="text-center text-sm">
                   ¿No tienes una cuenta?{" "}
-                  <Link href="/register" className="text-primary hover:underline font-medium">
-                    Inscríbete
+                  <Link href="/pages/register" className="text-primary hover:underline font-medium">
+                    Registrate
                   </Link>
                 </div>
               </CardFooter>
