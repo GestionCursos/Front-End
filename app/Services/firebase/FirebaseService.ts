@@ -30,7 +30,7 @@ class FirebaseService {
             //agregar el obtener foto de usuario
             if (!verifyE) {
                 alert("verifica tu correo Electronico")
-                await sendEmailVerification(userCredential.user, { url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/login` });
+                await sendEmailVerification(userCredential.user, { url: `https://edu-events.pages.dev/pages/login` });
             }
 
             StorageNavegador.saveToLocalStorageWithExpiry(
@@ -56,7 +56,7 @@ class FirebaseService {
             const userCredential = await createUserWithEmailAndPassword(getAuth(), email, password);
             const user = userCredential.user;
             const idToken = await user.getIdToken();
-            await sendEmailVerification(userCredential.user, { url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/login` });
+            await sendEmailVerification(userCredential.user, { url: `https://edu-events.pages.dev/pages/login` });
             //agregar el obtener foto de usuario
             const verifyE = await user.emailVerified;
             if (!verifyE) {
