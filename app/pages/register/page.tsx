@@ -24,6 +24,7 @@ import StorageNavegador from "@/app/Services/StorageNavegador"
 
 import Users from "@/app/models/User"
 import { getCarreras } from "@/app/Services/carreraService"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 
 type RegisterFormValues = z.infer<typeof registerSchema>
@@ -36,6 +37,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [selectedCarrera, setSelectedCarrera] = useState("");
+  const [showTerms, setShowTerms] = useState(false);
 
   // Estado para manejar la imagen de perfil
   const [file, setFile] = useState<File | null>(null);
@@ -123,6 +125,28 @@ export default function RegisterPage() {
   }, []);
   return (
     <SiteLayout>
+      {/* Modal de Términos y Condiciones */}
+      {showTerms && (
+        <Dialog open={showTerms} onOpenChange={setShowTerms}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Términos y Condiciones</DialogTitle>
+              <DialogDescription>
+                <div className="max-h-72 overflow-y-auto text-sm text-gray-700 space-y-2">
+                  <p><b>1. Uso de la plataforma:</b> Al registrarte aceptas que la información proporcionada es verídica y que harás un uso responsable de EduEvents.</p>
+                  <p><b>2. Privacidad:</b> Tus datos serán tratados conforme a la política de privacidad y solo se usarán para fines académicos y administrativos.</p>
+                  <p><b>3. Participación:</b> El registro en eventos implica el compromiso de asistencia y cumplimiento de los requisitos establecidos.</p>
+                  <p><b>4. Propiedad intelectual:</b> El contenido de la plataforma es propiedad de EduEvents y no puede ser reproducido sin autorización.</p>
+                  <p><b>5. Sanciones:</b> El incumplimiento de las normas puede conllevar la suspensión o eliminación de la cuenta.</p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setShowTerms(false)} className="w-full">Cerrar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       <div className="py-16 bg-gradient-to-b from-red-50 to-white">
         <div className="container px-4 mx-auto">
           <Card className="w-full max-w-md mx-auto auth-card">
@@ -274,9 +298,9 @@ export default function RegisterPage() {
                     />
                     <Label htmlFor="terms" className="text-sm font-normal">
                       Acepto los{" "}
-                      <Link href="/terms" className="text-primary hover:underline font-medium" target="_blank">
+                      <button type="button" className="text-primary hover:underline font-medium bg-transparent border-none p-0" onClick={() => setShowTerms(true)}>
                         términos y condiciones
-                      </Link>
+                      </button>
                     </Label>
                   </div>
                   <FormError message={form.formState.errors.terms?.message} />
