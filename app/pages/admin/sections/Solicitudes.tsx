@@ -55,7 +55,12 @@ export default function Solicitudes() {
             const result = await Solicitud.actualizarEstado(payload);
 
             if (result) {
-                setSolicitudes(prev => prev.filter(sol => sol.idSolicitud !== selectedSolicitudId));
+                // Actualiza el estado local de la solicitud cambiando su estado
+                setSolicitudes(prev => prev.map(sol =>
+                    sol.idSolicitud === selectedSolicitudId
+                        ? { ...sol, estado: nuevoEstado, justificacion: descripcion.trim() }
+                        : sol
+                ));
             } else {
                 alert("Error al actualizar el estado.");
             }
@@ -139,7 +144,15 @@ export default function Solicitudes() {
                                         <div>No hay solicitudes aprobadas.</div>
                                     ) : (
                                         filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Aprobado'), searchAprobada).map((solicitud: SolicitudGeneral) => (
-                                            <SolicitudCardAprobada key={solicitud.idSolicitud} solicitud={solicitud} onChange={refetch} />
+                                            <SolicitudCardAprobada key={solicitud.idSolicitud} solicitud={solicitud} onChange={(id, nuevoEstado) => {
+                                                if (id && nuevoEstado) {
+                                                    setSolicitudes(prev => prev.map(sol =>
+                                                        sol.idSolicitud === id ? { ...sol, estado: nuevoEstado } : sol
+                                                    ));
+                                                } else {
+                                                    refetch();
+                                                }
+                                            }} />
                                         ))
                                     )}
                                 </div>
