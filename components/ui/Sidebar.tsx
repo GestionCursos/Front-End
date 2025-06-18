@@ -42,7 +42,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
 
-  const user = StorageNavegador.getItemWithExpiry("user") as Users;
+  const user = StorageNavegador.getItemWithExpiry("user") as Users | null;
 
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
@@ -71,7 +71,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
         <h2 className="text-lg font-bold text-red-700 mb-6 px-2">Panel</h2>
         <nav className="space-y-1">
           {navItems
-            .filter(item => item.rolesPermitidos.includes(user.rol)) 
+            .filter(item => user && item.rolesPermitidos.includes(user.rol)) 
             .map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -104,10 +104,10 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           className="w-full flex items-center gap-3 text-sm text-gray-800 hover:bg-gray-100 rounded-md px-2 py-2"
         >
           <User size={18} className="text-red-500" />
-          <img src={user.urlUserImg} alt="perfil" className="w-8 h-8 rounded-full" />
+          <img src={user?.urlUserImg || "/placeholder-user.jpg"} alt="perfil" className="w-8 h-8 rounded-full" />
           <div className="text-left">
-            <p className="font-semibold">{user.username}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="font-semibold">{user?.username || "Usuario"}</p>
+            <p className="text-xs text-gray-500">{user?.email || ''}</p>
           </div>
         </button>
 
