@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-export default function SolicitudCardFinalizada({ solicitud }) {
+export default function SolicitudCardFinalizada({ solicitud, onFilterChange }) {
   return (
-    <div className="rounded-3xl shadow-xl bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 p-6 opacity-90 grayscale max-w-full overflow-hidden">
+    <div className={`rounded-3xl shadow-xl bg-gradient-to-br p-6 max-w-full overflow-hidden
+      ${solicitud.estado === 'Completado' ? 'from-green-50 to-white border-green-200 opacity-100 grayscale-0' : ''}
+      ${solicitud.estado === 'Cancelado' ? 'from-red-50 to-white border-red-200 opacity-90 grayscale' : ''}
+      ${solicitud.estado === 'Rechazado' ? 'from-gray-100 to-white border-gray-300 opacity-80 grayscale' : ''}
+      border-2`}
+    >
       <div className="flex items-center gap-2 mb-2">
         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-mono text-gray-500">#{solicitud.idSolicitud}</span>
         <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm
@@ -43,6 +48,24 @@ export default function SolicitudCardFinalizada({ solicitud }) {
           <div className="mt-2 text-xs text-gray-500 italic text-left w-full max-w-xs mx-auto break-words">Justificación: {solicitud.justificacion}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Filtro de estado (combobox)
+export function FiltroEstadoFinalizadas({ value, onChange }) {
+  return (
+    <div className="mb-4 flex justify-end">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-gray-200 max-w-xs"
+      >
+        <option value="">Todos los estados</option>
+        <option value="Completado">Completado</option>
+        <option value="Cancelado">Cancelado</option>
+        <option value="Rechazado">Rechazado</option>
+      </select>
     </div>
   );
 }

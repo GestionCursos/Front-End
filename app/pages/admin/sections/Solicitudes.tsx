@@ -10,7 +10,7 @@ import SolicitudCard from './SolicitudCard';
 import SolicitudCardPendiente from './SolicitudCardPendiente';
 import SolicitudCardAprobada from './SolicitudCardAprobada';
 import SolicitudCardImplementando from './SolicitudCardImplementando';
-import SolicitudCardFinalizada from './SolicitudCardFinalizada';
+import SolicitudCardFinalizada, { FiltroEstadoFinalizadas } from './SolicitudCardFinalizada';
 import { Tabs, Tab } from '@mui/material';
 import { CircularProgress } from '@mui/material';
 import { SolicitudGeneral } from '@/app/models/SolicitudGeneral';
@@ -27,6 +27,7 @@ export default function Solicitudes() {
     const [searchAprobada, setSearchAprobada] = useState("");
     const [searchImplementando, setSearchImplementando] = useState("");
     const [searchFinalizada, setSearchFinalizada] = useState("");
+    const [searchEstadoFinalizada, setSearchEstadoFinalizada] = useState("");
     const abrirModal = (idSolicitud: number, estado: "Aprobado" | "Rechazado") => {
         setSelectedSolicitudId(idSolicitud);
         setNuevoEstado(estado);
@@ -183,7 +184,7 @@ export default function Solicitudes() {
                         {tab === 3 && (
                             <div>
                                 <h3 className="text-lg font-bold mt-6 mb-2">Completadas o Canceladas</h3>
-                                {/* Input de búsqueda más largo (casi de lado a lado en desktop) */}
+                                <FiltroEstadoFinalizadas value={searchEstadoFinalizada} onChange={setSearchEstadoFinalizada} />
                                 <input
                                     type="text"
                                     placeholder="Buscar por nombre, correo, apartado, tipo, justificación, colaborador..."
@@ -192,10 +193,22 @@ export default function Solicitudes() {
                                     onChange={e => setSearchFinalizada(e.target.value)}
                                 />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                    {filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado'), searchFinalizada).length === 0 ? (
+                                    {filtrarSolicitudes(
+                                        solicitudes.filter(sol =>
+                                            (sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado') &&
+                                            (!searchEstadoFinalizada || sol.estado === searchEstadoFinalizada)
+                                        ),
+                                        searchFinalizada
+                                    ).length === 0 ? (
                                         <div>No hay solicitudes completadas, canceladas o rechazadas.</div>
                                     ) : (
-                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado'), searchFinalizada).map((solicitud: SolicitudGeneral) => (
+                                        filtrarSolicitudes(
+                                            solicitudes.filter(sol =>
+                                                (sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado') &&
+                                                (!searchEstadoFinalizada || sol.estado === searchEstadoFinalizada)
+                                            ),
+                                            searchFinalizada
+                                        ).map((solicitud: SolicitudGeneral) => (
                                             <SolicitudCardFinalizada key={solicitud.idSolicitud} solicitud={solicitud} />
                                         ))
                                     )}
