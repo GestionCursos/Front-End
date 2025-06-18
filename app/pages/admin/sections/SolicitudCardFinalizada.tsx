@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function SolicitudCardFinalizada({ solicitud }) {
   return (
-    <div className="border-2 rounded-2xl p-5 shadow-lg bg-white/90 opacity-80 grayscale border-gray-300">
+    <div className="rounded-3xl shadow-xl bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 p-6 opacity-90 grayscale max-w-full overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-mono text-gray-500">#{solicitud.idSolicitud}</span>
         <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm
@@ -13,8 +13,8 @@ export default function SolicitudCardFinalizada({ solicitud }) {
           {solicitud.estado}
         </span>
       </div>
-      <div className="text-sm text-gray-600 mb-2">{solicitud.descripcion}</div>
-      <div className="mt-4 p-4 rounded-lg bg-gray-100 border border-gray-200 text-center flex flex-col items-center gap-2">
+      <div className="text-sm text-gray-600 mb-2 break-words">{solicitud.descripcion}</div>
+      <div className="mt-4 p-4 rounded-lg bg-gray-100 border border-gray-200 text-center flex flex-col items-center gap-2 overflow-x-auto">
         {solicitud.estado === 'Completado' && (
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold">
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -35,12 +35,12 @@ export default function SolicitudCardFinalizada({ solicitud }) {
         )}
         <div className="flex flex-col gap-1 text-sm mt-2 text-left w-full max-w-xs mx-auto">
           <span><span className="font-semibold">Colaborador Backend:</span> {solicitud.colaboradorGithubBackend || '-'}</span>
-          <span><span className="font-semibold">Rama Backend:</span> {solicitud.ramaBackend || '-'}</span>
+          <span><span className="font-semibold">Rama Backend:</span> <span className="break-all">{solicitud.ramaBackend || '-'}</span></span>
           <span><span className="font-semibold">Colaborador Frontend:</span> {solicitud.colaboradorGithubFrontend || '-'}</span>
-          <span><span className="font-semibold">Rama Frontend:</span> {solicitud.ramaFrontend || '-'}</span>
+          <span><span className="font-semibold">Rama Frontend:</span> <span className="break-all">{solicitud.ramaFrontend || '-'}</span></span>
         </div>
         {solicitud.justificacion && (
-          <div className="mt-2 text-xs text-gray-500 italic text-left w-full max-w-xs mx-auto">Justificación: {solicitud.justificacion}</div>
+          <div className="mt-2 text-xs text-gray-500 italic text-left w-full max-w-xs mx-auto break-words">Justificación: {solicitud.justificacion}</div>
         )}
       </div>
     </div>
