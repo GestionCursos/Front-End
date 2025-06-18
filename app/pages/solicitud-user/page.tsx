@@ -91,10 +91,27 @@ export default function SolicitudCambioForm() {
       if (archivoFile) {
         urlArchivo = await FirebaseService.uploadFile(archivoFile, "alexander", archivoFile.name);
       }
-      solicitudData.archivo = urlArchivo ?? "";
-      const solicitudCreada = await Solicitud.crearSolicitud(solicitudData);
+      // Asegurarse de que idUser sea el UID string
+      const solicitudPayload = {
+        ...solicitudData,
+        idUser: user?.uid_firebase || solicitudData.idUser || '',
+        archivo: urlArchivo ?? '',
+        apartado: solicitudData.apartado || '',
+        tipoCambio: solicitudData.tipoCambio || '',
+        otroTipo: solicitudData.otroTipo || '',
+        descripcion: solicitudData.descripcion || '',
+        justificacion: solicitudData.justificacion || '',
+        urgencia: solicitudData.urgencia || '',
+      };
+      // Imprimir en consola el payload que se enviará
+      console.log('Datos enviados al backend:', solicitudPayload);
+      if (!solicitudPayload.idUser) {
+        alert('Error: El usuario no tiene UID de Firebase. No se puede enviar la solicitud.');
+        return;
+      }
+      const solicitudCreada = await Solicitud.crearSolicitud(solicitudPayload);
 
-      if (solicitudData.tipoCambio === 'Corrección de error') {
+      if (solicitudPayload.tipoCambio === 'Corrección de error') {
         await Solicitud.crearDetalleError({
           ...detalleErrorData,
           idSolicitud: solicitudCreada.idSolicitud,
