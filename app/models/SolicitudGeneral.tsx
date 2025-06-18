@@ -14,5 +14,9 @@ export interface SolicitudGeneral {
     justificacion: string;
     urgencia: "Baja" | "Media" | "Alta";
     archivo: string;
-    estado: "Pendiente" | "Aprobado" | "Rechazado";
+    estado: "Pendiente" | "Aprobado" | "Rechazado" | "Implementando" | "Completado" | "Cancelado";
+    colaboradorGithubBackend?: string;
+    colaboradorGithubFrontend?: string;
+    ramaBackend?: string;
+    ramaFrontend?: string;
 }
