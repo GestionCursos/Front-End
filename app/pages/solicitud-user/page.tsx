@@ -66,9 +66,10 @@ export default function SolicitudCambioForm() {
       };
       reader.readAsDataURL(files[0]);
     } else {
+      // Forzar el valor exacto si el campo es tipoCambio y el radio es Corrección de error
       setSolicitudData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: name === 'tipoCambio' && value === 'Corrección de error' ? 'Corrección de error' : value,
       }));
     }
   };

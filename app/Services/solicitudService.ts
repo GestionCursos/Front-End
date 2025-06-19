@@ -24,10 +24,12 @@ class Solicitud {
     }
 
     static async crearDetalleError(formData: CreateDetalleError) {
+        const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/detalle-error`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                "Authorization": `Bearer ${idTokenString?.token}`
             },
             body: JSON.stringify(formData)
         })
