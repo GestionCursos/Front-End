@@ -1,8 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
+import CommitsModal from './CommitsModal';
 
 export default function SolicitudCardFinalizada({ solicitud, onFilterChange }) {
+  const [showCommitsModal, setShowCommitsModal] = useState(false);
+  const [commits, setCommits] = useState<any[]>([]);
+  const [commitsLoading, setCommitsLoading] = useState(false);
+  const [commitsError, setCommitsError] = useState<string | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+
+  const fetchCommits = async (repo: 'backend' | 'frontend', branch: string) => {
+    setCommitsLoading(true);
+    setCommitsError(null);
+    setSelectedBranch(branch);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/commits/${repo}/${encodeURIComponent(branch)}`);
+      if (!res.ok) throw new Error('No se pudieron obtener los commits');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setCommits(data);
+      setShowCommitsModal(true);
+    } catch (e: any) {
+      setCommitsError(e.message || 'Error desconocido');
+      setShowCommitsModal(true);
+    } finally {
+      setCommitsLoading(false);
+    }
+  };
+
   return (
-    <div className={`rounded-3xl shadow-xl bg-gradient-to-br p-6 max-w-full overflow-hidden
+    <>
+      <div className={`rounded-3xl shadow-xl bg-gradient-to-br p-6 max-w-full overflow-hidden
       ${solicitud.estado === 'Completado' ? 'from-green-50 to-white border-green-200 opacity-100 grayscale-0' : ''}
       ${solicitud.estado === 'Cancelado' ? 'from-red-50 to-white border-red-200 opacity-90 grayscale' : ''}
       ${solicitud.estado === 'Rechazado' ? 'from-gray-100 to-white border-gray-300 opacity-80 grayscale' : ''}
@@ -40,15 +67,38 @@ export default function SolicitudCardFinalizada({ solicitud, onFilterChange }) {
         )}
         <div className="flex flex-col gap-1 text-sm mt-2 text-left w-full max-w-xs mx-auto">
           <span><span className="font-semibold">Colaborador Backend:</span> {solicitud.colaboradorGithubBackend || '-'}</span>
-          <span><span className="font-semibold">Rama Backend:</span> <span className="break-all">{solicitud.ramaBackend || '-'}</span></span>
+          <span>
+            <span className="font-semibold">Rama Backend:</span> <span className="break-all">{solicitud.ramaBackend || '-'}</span>
+            {solicitud.ramaBackend && (
+              <button className="ml-2 text-blue-600 underline hover:text-blue-800 text-xs" onClick={() => fetchCommits('backend', solicitud.ramaBackend)}>
+                Ver commits
+              </button>
+            )}
+          </span>
           <span><span className="font-semibold">Colaborador Frontend:</span> {solicitud.colaboradorGithubFrontend || '-'}</span>
-          <span><span className="font-semibold">Rama Frontend:</span> <span className="break-all">{solicitud.ramaFrontend || '-'}</span></span>
+          <span>
+            <span className="font-semibold">Rama Frontend:</span> <span className="break-all">{solicitud.ramaFrontend || '-'}</span>
+            {solicitud.ramaFrontend && (
+              <button className="ml-2 text-blue-600 underline hover:text-blue-800 text-xs" onClick={() => fetchCommits('frontend', solicitud.ramaFrontend)}>
+                Ver commits
+              </button>
+            )}
+          </span>
         </div>
         {solicitud.justificacion && (
           <div className="mt-2 text-xs text-gray-500 italic text-left w-full max-w-xs mx-auto break-words">Justificación: {solicitud.justificacion}</div>
         )}
       </div>
     </div>
+      <CommitsModal
+        show={showCommitsModal}
+        onClose={() => setShowCommitsModal(false)}
+        branch={selectedBranch}
+        commits={commits}
+        loading={commitsLoading}
+        error={commitsError}
+      />
+    </>
   );
 }
 
