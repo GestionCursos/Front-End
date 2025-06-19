@@ -6,6 +6,7 @@ import Inicio from '../sections/Inicio';
 import MisionVision from '../sections/MisionVision';
 import Autoridade from '../sections/Autoridades';
 import Solicitudes from '../sections/Solicitudes';
+import SolicitudesAdmin from '../sections/SolicitudesAdmin';
 import Eventos from '../sections/Eventos';
 import Reportes from '../sections/Reportes';
 import Calificacion from '../sections/Calificacion';
@@ -21,6 +22,7 @@ const sectionComponents: { [key: string]: React.ReactNode } = {
   mision_vision: <MisionVision />,
   autoridades: <Autoridade />,
   solicitudes: <Solicitudes />,
+  solicitudes_admin: <SolicitudesAdmin />,
   eventos: <Eventos />,
   reportes: <Reportes />,
   calificaciones: <Calificacion />,

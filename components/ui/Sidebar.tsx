@@ -25,17 +25,18 @@ type SidebarProps = {
 
 const navItems = [
   { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", ""] },
   { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus, rolesPermitidos: ["admin"] },
   { id: "eventos", label: "Eventos", icon: Calendar, rolesPermitidos: ["admin", "admin2"] },
   { id: "Secciones", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
   { id: "autoridades", label: "Autoridades", icon: User, rolesPermitidos: ["admin", "admin2"] },
-  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["desarrollador", "admin2"] },
+  { id: "solicitudes_admin", label: "Solicitudes (Admin)", icon: AlertCircleIcon, rolesPermitidos: ["admin"] },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings, rolesPermitidos: ["admin", "admin2"] },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon, rolesPermitidos: ["admin", "admin2"] },
   { id: "calificaciones", label: "Calificaciones", icon: Edit, rolesPermitidos: ["admin", "admin2"] },
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
-  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: ["desarrollador"] },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: [""] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
