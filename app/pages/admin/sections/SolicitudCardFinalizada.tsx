@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export default function SolicitudCardFinalizada({ solicitud, onFilterChange }) {
   return (
@@ -53,7 +53,7 @@ export default function SolicitudCardFinalizada({ solicitud, onFilterChange }) {
 }
 
 // Filtro de estado (combobox)
-export function FiltroEstadoFinalizadas({ value, onChange }) {
+export function FiltroEstadoFinalizadas({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="mb-4 flex justify-end">
       <select

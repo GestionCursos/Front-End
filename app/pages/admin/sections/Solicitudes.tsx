@@ -28,6 +28,9 @@ export default function Solicitudes() {
     const [searchImplementando, setSearchImplementando] = useState("");
     const [searchFinalizada, setSearchFinalizada] = useState("");
     const [searchEstadoFinalizada, setSearchEstadoFinalizada] = useState("");
+    const [errorModal, setErrorModal] = useState<string | null>(null);
+    const [successModal, setSuccessModal] = useState<string | null>(null);
+    const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
     const abrirModal = (idSolicitud: number, estado: "Aprobado" | "Rechazado") => {
         setSelectedSolicitudId(idSolicitud);
         setNuevoEstado(estado);
@@ -38,11 +41,15 @@ export default function Solicitudes() {
 
     useEffect(() => {
         refetch();
+        // Escuchar evento global para recargar solicitudes en tiempo real
+        const handler = () => refetch();
+        window.addEventListener('solicitudes:refresh', handler);
+        return () => window.removeEventListener('solicitudes:refresh', handler);
     }, [refetch]);
 
     const confirmarCambioEstado = async () => {
         if (!selectedSolicitudId || !nuevoEstado || !descripcion.trim()) {
-            alert("Por favor escribe una descripción.");
+            setErrorModal("Por favor escribe una descripción.");
             return;
         }
 
@@ -62,10 +69,12 @@ export default function Solicitudes() {
                         ? { ...sol, estado: nuevoEstado, justificacion: descripcion.trim() }
                         : sol
                 ));
+                setSuccessModal('Solicitud aprobada correctamente. Se notificó por correo');
             } else {
-                alert("Error al actualizar el estado.");
+                setErrorModal("Error al actualizar el estado.");
             }
         } catch (error) {
+            setErrorModal("Ocurrió un error inesperado al actualizar el estado.");
             console.error(error);
         }
         setModalVisible(false);
@@ -86,6 +95,12 @@ export default function Solicitudes() {
             (sol.colaboradorGithubBackend || "").toLowerCase().includes(search.toLowerCase()) ||
             (sol.colaboradorGithubFrontend || "").toLowerCase().includes(search.toLowerCase())
         );
+    };
+
+    // Nuevo: callback global para éxito
+    const handleSuccess = (msg: string, afterClose?: () => void) => {
+        setSuccessModal(msg);
+        setPendingAction(() => afterClose || null);
     };
 
     return (
@@ -122,8 +137,14 @@ export default function Solicitudes() {
                                     {filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Pendiente'), searchPendiente).length === 0 ? (
                                         <div>No hay solicitudes pendientes.</div>
                                     ) : (
-                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Pendiente'), searchPendiente).map((sol) => (
-                                            <SolicitudCardPendiente key={sol.idSolicitud} solicitud={sol} onAprobar={() => abrirModal(sol.idSolicitud, 'Aprobado')} onRechazar={() => abrirModal(sol.idSolicitud, 'Rechazado')} />
+                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Pendiente'), searchPendiente).map((sol: any) => (
+                                            <SolicitudCardPendiente
+                                                key={sol.idSolicitud}
+                                                solicitud={sol}
+                                                onAprobar={() => abrirModal(sol.idSolicitud, 'Aprobado')}
+                                                onRechazar={() => abrirModal(sol.idSolicitud, 'Rechazado')}
+                                                onSuccess={(msg: string) => handleSuccess(msg, refetch)}
+                                            />
                                         ))
                                     )}
                                 </div>
@@ -144,16 +165,21 @@ export default function Solicitudes() {
                                     {filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Aprobado'), searchAprobada).length === 0 ? (
                                         <div>No hay solicitudes aprobadas.</div>
                                     ) : (
-                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Aprobado'), searchAprobada).map((solicitud: SolicitudGeneral) => (
-                                            <SolicitudCardAprobada key={solicitud.idSolicitud} solicitud={solicitud} onChange={(id, nuevoEstado) => {
-                                                if (id && nuevoEstado) {
-                                                    setSolicitudes(prev => prev.map(sol =>
-                                                        sol.idSolicitud === id ? { ...sol, estado: nuevoEstado } : sol
-                                                    ));
-                                                } else {
-                                                    refetch();
-                                                }
-                                            }} />
+                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Aprobado'), searchAprobada).map((solicitud: any) => (
+                                            <SolicitudCardAprobada
+                                                key={solicitud.idSolicitud}
+                                                solicitud={solicitud}
+                                                onChange={(id: number, nuevoEstado: string) => {
+                                                    if (id && nuevoEstado) {
+                                                        setSolicitudes((prev: any[]) => prev.map(sol =>
+                                                            sol.idSolicitud === id ? { ...sol, estado: nuevoEstado } : sol
+                                                        ));
+                                                    } else {
+                                                        refetch();
+                                                    }
+                                                }}
+                                                onSuccess={(msg: string) => handleSuccess(msg, refetch)}
+                                            />
                                         ))
                                     )}
                                 </div>
@@ -174,8 +200,13 @@ export default function Solicitudes() {
                                     {filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Implementando'), searchImplementando).length === 0 ? (
                                         <div>No hay solicitudes en implementación.</div>
                                     ) : (
-                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Implementando'), searchImplementando).map((solicitud: SolicitudGeneral) => (
-                                            <SolicitudCardImplementando key={solicitud.idSolicitud} solicitud={solicitud} onChange={refetch} />
+                                        filtrarSolicitudes(solicitudes.filter(sol => sol.estado === 'Implementando'), searchImplementando).map((solicitud: any) => (
+                                            <SolicitudCardImplementando
+                                                key={solicitud.idSolicitud}
+                                                solicitud={solicitud}
+                                                onChange={refetch}
+                                                onSuccess={(msg: string) => handleSuccess(msg, refetch)}
+                                            />
                                         ))
                                     )}
                                 </div>
@@ -194,7 +225,7 @@ export default function Solicitudes() {
                                 />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                     {filtrarSolicitudes(
-                                        solicitudes.filter(sol =>
+                                        solicitudes.filter((sol: any) =>
                                             (sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado') &&
                                             (!searchEstadoFinalizada || sol.estado === searchEstadoFinalizada)
                                         ),
@@ -203,13 +234,13 @@ export default function Solicitudes() {
                                         <div>No hay solicitudes completadas, canceladas o rechazadas.</div>
                                     ) : (
                                         filtrarSolicitudes(
-                                            solicitudes.filter(sol =>
+                                            solicitudes.filter((sol: any) =>
                                                 (sol.estado === 'Completado' || sol.estado === 'Cancelado' || sol.estado === 'Rechazado') &&
                                                 (!searchEstadoFinalizada || sol.estado === searchEstadoFinalizada)
                                             ),
                                             searchFinalizada
-                                        ).map((solicitud: SolicitudGeneral) => (
-                                            <SolicitudCardFinalizada key={solicitud.idSolicitud} solicitud={solicitud} />
+                                        ).map((solicitud: any) => (
+                                            <SolicitudCardFinalizada key={solicitud.idSolicitud} solicitud={solicitud} onFilterChange={() => {}} />
                                         ))
                                     )}
                                 </div>
@@ -252,6 +283,44 @@ export default function Solicitudes() {
                 )}
 
             </div>
+            {/* Modal de error */}
+            {errorModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+                    <div className="bg-white rounded-md p-6 w-full max-w-md space-y-4 shadow-lg">
+                        <h3 className="text-lg font-bold text-red-700">Error</h3>
+                        <p className="text-sm text-gray-700">{errorModal}</p>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setErrorModal(null)}
+                                className="px-4 py-1.5 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de éxito global */}
+            {successModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[1000]">
+                    <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full text-center border-2 border-green-500">
+                        <h3 className="text-2xl font-bold mb-4 text-green-700">
+                            Éxito
+                        </h3>
+                        <p className="mb-6 text-lg text-gray-700">{successModal}</p>
+                        <button
+                            onClick={() => {
+                                setSuccessModal(null);
+                                if (pendingAction) {
+                                    pendingAction();
+                                    setPendingAction(null);
+                                }
+                            }}
+                            className="px-6 py-2 bg-green-600 text-white rounded-full text-lg font-semibold hover:bg-green-700 transition"
+                        >Cerrar</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

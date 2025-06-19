@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
 import StorageNavegador from "@/app/Services/StorageNavegador";
 
-export default function SolicitudCardImplementando({ solicitud, onChange }) {
+interface Props {
+  solicitud: any;
+  onChange?: () => void;
+  onSuccess?: (msg: string) => void;
+}
+
+export default function SolicitudCardImplementando({ solicitud, onChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState('');
   const [prBackend, setPrBackend] = useState(false);
   const [prFrontend, setPrFrontend] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMsg, setModalMsg] = useState('');
 
+  const showErrorModal = (msg: string) => {
+    setModalMsg(msg);
+    setShowModal(true);
+  };
+
   const marcarComoCompletado = async (repo: 'backend' | 'frontend') => {
     setLoading(true);
-    setMensaje('');
     const idTokenString = StorageNavegador.getItemWithExpiry("user");
-    const token = idTokenString?.token;
+    const token = (idTokenString && typeof idTokenString === 'object' && 'token' in idTokenString) ? idTokenString.token : undefined;
     const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/completar/${solicitud.idSolicitud}`, {
       method: 'PATCH',
       headers: {
@@ -23,21 +32,20 @@ export default function SolicitudCardImplementando({ solicitud, onChange }) {
       body: JSON.stringify({ repo }),
     });
     if (res.ok) {
-      setMensaje(`Solicitud completada y PR creado en ${repo}.`);
-      onChange && onChange();
-    } else setMensaje(`Error al completar solicitud en ${repo}.`);
+      onSuccess && onSuccess(`Solicitud completada y PR creado en ${repo}.`);
+      return;
+    } else showErrorModal(`Error al completar solicitud en ${repo}.`);
     setLoading(false);
   };
 
   const marcarComoCancelado = async () => {
     setLoading(true);
-    setMensaje('');
     const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/cancelar/${solicitud.idSolicitud}`, {
       method: 'PATCH' });
     if (res.ok) {
-      setMensaje('Solicitud cancelada.');
-      onChange && onChange();
-    } else setMensaje('Error al cancelar solicitud.');
+      onSuccess && onSuccess('Solicitud cancelada.');
+      return;
+    } else showErrorModal('Error al cancelar solicitud.');
     setLoading(false);
   };
 
@@ -105,13 +113,12 @@ export default function SolicitudCardImplementando({ solicitud, onChange }) {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full text-center">
-            <h3 className="text-lg font-bold mb-2 text-red-700">Atención</h3>
+            <h3 className="text-lg font-bold mb-2 text-red-700">{modalMsg.includes('Error') ? 'Error' : 'Atención'}</h3>
             <p className="mb-4 text-gray-700">{modalMsg}</p>
             <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Cerrar</button>
           </div>
         </div>
       )}
-      {mensaje && <div className="mt-2 text-sm text-blue-700 animate-pulse">{mensaje}</div>}
     </div>
   );
 }
