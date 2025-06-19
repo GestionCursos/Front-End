@@ -6,12 +6,16 @@ import StorageNavegador from "./StorageNavegador";
 class Solicitud {
     static async crearSolicitud(formData: CreateSolicitude) {
         const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud${idTokenString?.token!=null ? "/logeado" : ""}`, {
+        // Permitir solicitudes sin usuario logueado
+        const isLogged = !!idTokenString?.token;
+        const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud${isLogged ? "/logeado" : ""}`;
+        const headers: any = {
+            'Content-Type': 'application/json',
+        };
+        if (isLogged) headers["Authorization"] = `Bearer ${idTokenString.token}`;
+        const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                "Authorization": `Bearer ${idTokenString?.token}`
-            },
+            headers,
             body: JSON.stringify(formData),
         });
 
@@ -24,29 +28,37 @@ class Solicitud {
     }
 
     static async crearDetalleError(formData: CreateDetalleError) {
+        const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
+        const headers: any = {
+            'Content-Type': 'application/json',
+        };
+        if (idTokenString?.token) headers["Authorization"] = `Bearer ${idTokenString.token}`;
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/detalle-error`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(formData)
         })
         if (!response.ok) {
             throw new Error(`Error al crear el usuario: ${response.statusText}`);
         }
-
         const data = await response.json();
         console.log(data);
         return data;
     }
-    static async actualizarEstado(payload: {
-        idSolicitud: number;
-        estado: 'Aprobado' | 'Rechazado';
-        justificacion: string;
+    static async actualizarEstado(idSolicitud: number, payload: {
+        estado?: 'Aprobado' | 'Rechazado' | string;
+        descripcion?: string;
+        tipoCambio?: string;
+        otroTipo?: string;
+        colaboradorGithub?: string;
+        colaboradorGithubBackend?: string;
+        colaboradorGithubFrontend?: string;
+        ramaBackend?: string;
+        ramaFrontend?: string;
     }) {
         const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/registro-aprobacion`, {
-            method: 'POST',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/actualizar/${idSolicitud}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 "Authorization": `Bearer ${idTokenString?.token}`

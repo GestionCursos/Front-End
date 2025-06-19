@@ -1,8 +1,7 @@
-
 class StorageNavegador {
-
     // Función para guardar en localStorage con expiración
     static saveToLocalStorageWithExpiry(key: string, value: any, ttlMs: number) {
+        if (typeof window === "undefined") return; // No hacer nada en el servidor
         const item = {
             data: value,
             expiry: Date.now() + ttlMs,
@@ -10,8 +9,8 @@ class StorageNavegador {
         localStorage.setItem(key, JSON.stringify(item));
     }
 
-    // Función para obtener el user guardado en el localStore
     static getItemWithExpiry<T>(key: string): T | null {
+        if (typeof window === "undefined") return null; // No hay localStorage en el servidor
         const stored = localStorage.getItem(key);
         if (!stored) return null;
 
@@ -27,7 +26,5 @@ class StorageNavegador {
             return null;
         }
     }
-
-
 }
 export default StorageNavegador;

@@ -25,24 +25,25 @@ type SidebarProps = {
 
 const navItems = [
   { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", ""] },
   { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus, rolesPermitidos: ["admin"] },
   { id: "eventos", label: "Eventos", icon: Calendar, rolesPermitidos: ["admin", "admin2"] },
   { id: "Secciones", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
   { id: "autoridades", label: "Autoridades", icon: User, rolesPermitidos: ["admin", "admin2"] },
-  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["desarrollador", "admin2"] },
+  { id: "solicitudes_admin", label: "Solicitudes (Admin)", icon: AlertCircleIcon, rolesPermitidos: ["admin"] },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings, rolesPermitidos: ["admin", "admin2"] },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon, rolesPermitidos: ["admin", "admin2"] },
   { id: "calificaciones", label: "Calificaciones", icon: Edit, rolesPermitidos: ["admin", "admin2"] },
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
-  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: ["desarrollador"] },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: [""] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
 
-  const user = StorageNavegador.getItemWithExpiry("user") as Users;
+  const user = StorageNavegador.getItemWithExpiry("user") as Users | null;
 
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
         <h2 className="text-lg font-bold text-red-700 mb-6 px-2">Panel</h2>
         <nav className="space-y-1">
           {navItems
-            .filter(item => item.rolesPermitidos.includes(user.rol)) 
+            .filter(item => user && item.rolesPermitidos.includes(user.rol)) 
             .map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -104,10 +105,10 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           className="w-full flex items-center gap-3 text-sm text-gray-800 hover:bg-gray-100 rounded-md px-2 py-2"
         >
           <User size={18} className="text-red-500" />
-          <img src={user.urlUserImg} alt="perfil" className="w-8 h-8 rounded-full" />
+          <img src={user?.urlUserImg || "/placeholder-user.jpg"} alt="perfil" className="w-8 h-8 rounded-full" />
           <div className="text-left">
-            <p className="font-semibold">{user.username}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="font-semibold">{user?.username || "Usuario"}</p>
+            <p className="text-xs text-gray-500">{user?.email || ''}</p>
           </div>
         </button>
 

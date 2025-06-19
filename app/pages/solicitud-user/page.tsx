@@ -14,7 +14,8 @@ import DescripcionCambio from '@/components/FormularioSolicitud/DescripcionCambi
 import DetalleError from '@/components/FormularioSolicitud/DetalleError';
 
 export default function SolicitudCambioForm() {
-  const user = StorageNavegador.getItemWithExpiry("user") as User;
+  // Permitir usuario nulo
+  const user = StorageNavegador.getItemWithExpiry("user") as User | null;
   const token = user?.token;
 
   const [archivoFile, setArchivoFile] = useState<File | null>(null);
@@ -27,7 +28,7 @@ export default function SolicitudCambioForm() {
 
 
   const [solicitudData, setSolicitudData] = useState<CreateSolicitude>({
-    idUser: 'GCyfxJs1plZ19ILC2FdcATPTVyf1',
+    idUser: user?.uid || '', // Si no está logueado, dejar vacío o manejar en backend
     apartado: '',
     tipoCambio: '',
     otroTipo: '',
@@ -50,6 +51,8 @@ export default function SolicitudCambioForm() {
     workaround: '',
   });
 
+  const [modal, setModal] = useState<{ open: boolean; type: 'success' | 'error'; message: string }>({ open: false, type: 'success', message: '' });
+
   const handleChangeSolicitud = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -66,9 +69,10 @@ export default function SolicitudCambioForm() {
       };
       reader.readAsDataURL(files[0]);
     } else {
+      // Forzar el valor exacto si el campo es tipoCambio y el radio es Corrección de error
       setSolicitudData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: name === 'tipoCambio' && value === 'Corrección de error' ? 'Corrección de error' : value,
       }));
     }
   };
@@ -91,119 +95,153 @@ export default function SolicitudCambioForm() {
       if (archivoFile) {
         urlArchivo = await FirebaseService.uploadFile(archivoFile, "alexander", archivoFile.name);
       }
-      solicitudData.archivo = urlArchivo ?? "";
-      const solicitudCreada = await Solicitud.crearSolicitud(solicitudData);
+      // Asegurarse de que idUser sea el UID string
+      const solicitudPayload = {
+        ...solicitudData,
+        idUser: user?.uid_firebase || solicitudData.idUser || '',
+        archivo: urlArchivo ?? '',
+        apartado: solicitudData.apartado || '',
+        tipoCambio: solicitudData.tipoCambio || '',
+        otroTipo: solicitudData.otroTipo || '',
+        descripcion: solicitudData.descripcion || '',
+        justificacion: solicitudData.justificacion || '',
+        urgencia: solicitudData.urgencia || '',
+      };
+      // Imprimir en consola el payload que se enviará
+      console.log('Datos enviados al backend:', solicitudPayload);
+      // Permitir solicitudes de usuarios no logueados (idUser puede ir vacío)
+      // Solo mostrar error si el usuario está logueado pero no tiene UID
+      if (user && !solicitudPayload.idUser) {
+        setModal({ open: true, type: 'error', message: 'Error: El usuario no tiene UID de Firebase. No se puede enviar la solicitud.' });
+        return;
+      }
+      const solicitudCreada = await Solicitud.crearSolicitud(solicitudPayload);
 
-      if (solicitudData.tipoCambio === 'Corrección de error') {
+      if (solicitudPayload.tipoCambio === 'Corrección de error') {
         await Solicitud.crearDetalleError({
           ...detalleErrorData,
           idSolicitud: solicitudCreada.idSolicitud,
         });
       }
 
-      alert('Solicitud enviada correctamente');
+      setModal({ open: true, type: 'success', message: 'Solicitud enviada correctamente' });
     } catch (error) {
       console.error('Error al enviar la solicitud:', error);
-      alert('Error al enviar la solicitud');
+      setModal({ open: true, type: 'error', message: 'Error al enviar la solicitud' });
     }
   };
 
   return (
-    <SiteLayout>      <div className="max-w-4xl mx-auto p-6 bg-card rounded-2xl shadow-md border">
-      <h1 className="text-3xl font-bold text-primary mb-6 text-center">Formulario de Solicitud de Cambio</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <SiteLayout>
+      <div className="max-w-4xl mx-auto p-6 bg-card rounded-2xl shadow-md border">
+        <h1 className="text-3xl font-bold text-primary mb-6 text-center">Formulario de Solicitud de Cambio</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* Datos del Solicitante */}
-        <DatosSolicitante user={user} />
-
-
-
-        {/* Datos de la Aplicación */}
-        <DatosAplicacion
-          value={solicitudData.apartado}
-          onChange={handleChangeSolicitud}
-        />
-
-        {/* Descripción del Cambio Solicitado */}
-        <DescripcionCambio
-          tipoCambio={solicitudData.tipoCambio}
-          otroTipo={solicitudData.otroTipo}
-          descripcion={solicitudData.descripcion}
-          onChange={handleChangeSolicitud}
-        />
+          {/* Datos del Solicitante */}
+          <DatosSolicitante user={user} />
 
 
-        {/* Campos de error si aplica */}
-        <DetalleError
-          visible={solicitudData.tipoCambio === "Corrección de error"}
-          detalleError={detalleErrorData}
-          onChange={handleChangeDetalle}
-        />
 
-        {/* Justificación del Cambio */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-primary dark:text-white">Justificación del Cambio</h2>
-          <textarea
-            name="justificacion"
-            placeholder="¿Por qué se necesita este cambio? ¿Qué problema resuelve o qué mejora aporta?"
+          {/* Datos de la Aplicación */}
+          <DatosAplicacion
+            value={solicitudData.apartado}
             onChange={handleChangeSolicitud}
-            value={solicitudData.justificacion}
-            className="w-full p-3 border rounded-lg bg-background auth-input min-h-[120px]"
           />
-        </div>
 
-        {/* Urgencia */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-primary dark:text-white">Urgencia del Cambio</h2>
-          <select
-            name="urgencia"
+          {/* Descripción del Cambio Solicitado */}
+          <DescripcionCambio
+            tipoCambio={solicitudData.tipoCambio}
+            otroTipo={solicitudData.otroTipo}
+            descripcion={solicitudData.descripcion}
             onChange={handleChangeSolicitud}
-            value={solicitudData.urgencia}
-            className="w-full p-3 border rounded-lg bg-background auth-input"
-          >
-            <option value="">Seleccione una opción</option>
-            <option value="Alta">Alta (bloquea operaciones / afecta a muchos usuarios)</option>
-            <option value="Media">Media (impacto moderado / solución alternativa posible)</option>
-            <option value="Baja">Baja (mejora menor / no urgente)</option>
-          </select>
-        </div>
+          />
 
-        {/* Adjuntar Archivos */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-primary dark:text-white">Adjuntar Archivos</h2>
-          <div className="flex flex-col items-start space-y-2">
-            <label
-              htmlFor="archivoInput"
-              className="inline-flex items-center justify-center px-6 py-2 auth-button text-white font-medium rounded-lg cursor-pointer transition-all"
-            >
-              Seleccionar archivo
-            </label>
 
-            <input
-              id="archivoInput"
-              type="file"
-              accept=".png,.jpg,.jpeg,.pdf,.docx,.xlsx"
-              onChange={handleArchivoChange}
-              className="hidden"
+          {/* Campos de error si aplica */}
+          <DetalleError
+            visible={solicitudData.tipoCambio === "Corrección de error"}
+            detalleError={detalleErrorData}
+            onChange={handleChangeDetalle}
+          />
+
+          {/* Justificación del Cambio */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-primary dark:text-white">Justificación del Cambio</h2>
+            <textarea
+              name="justificacion"
+              placeholder="¿Por qué se necesita este cambio? ¿Qué problema resuelve o qué mejora aporta?"
+              onChange={handleChangeSolicitud}
+              value={solicitudData.justificacion}
+              className="w-full p-3 border rounded-lg bg-background auth-input min-h-[120px]"
             />
+          </div>
 
-            {archivoFile && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Archivo seleccionado: <span className="font-medium">{archivoFile.name}</span>
-              </p>
-            )}
+          {/* Urgencia */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-primary dark:text-white">Urgencia del Cambio</h2>
+            <select
+              name="urgencia"
+              onChange={handleChangeSolicitud}
+              value={solicitudData.urgencia}
+              className="w-full p-3 border rounded-lg bg-background auth-input"
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="Alta">Alta (bloquea operaciones / afecta a muchos usuarios)</option>
+              <option value="Media">Media (impacto moderado / solución alternativa posible)</option>
+              <option value="Baja">Baja (mejora menor / no urgente)</option>
+            </select>
+          </div>
+
+          {/* Adjuntar Archivos */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-primary dark:text-white">Adjuntar Archivos</h2>
+            <div className="flex flex-col items-start space-y-2">
+              <label
+                htmlFor="archivoInput"
+                className="inline-flex items-center justify-center px-6 py-2 auth-button text-white font-medium rounded-lg cursor-pointer transition-all"
+              >
+                Seleccionar archivo
+              </label>
+
+              <input
+                id="archivoInput"
+                type="file"
+                accept=".png,.jpg,.jpeg,.pdf,.docx,.xlsx"
+                onChange={handleArchivoChange}
+                className="hidden"
+              />
+
+              {archivoFile && (
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Archivo seleccionado: <span className="font-medium">{archivoFile.name}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+
+          <button
+            type="submit"
+            className="w-full py-3 auth-button text-white font-semibold rounded-lg transition-all"
+          >
+            Enviar Solicitud
+          </button>
+        </form>
+      </div>
+
+      {/* Modal de feedback */}
+      {modal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className={`bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center border-2 ${modal.type === 'success' ? 'border-green-500' : 'border-red-500'}`}>
+            <h2 className={`text-2xl font-bold mb-4 ${modal.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>{modal.type === 'success' ? '¡Éxito!' : 'Error'}</h2>
+            <p className="mb-6 text-lg text-gray-700">{modal.message}</p>
+            <button
+              onClick={() => setModal({ ...modal, open: false })}
+              className={`px-6 py-2 rounded-full text-lg font-semibold transition ${modal.type === 'success' ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
+            >Cerrar</button>
           </div>
         </div>
-
-
-        <button
-          type="submit"
-          className="w-full py-3 auth-button text-white font-semibold rounded-lg transition-all"
-        >
-          Enviar Solicitud
-        </button>
-      </form>
-    </div >
-    </SiteLayout >
+      )}
+    </SiteLayout>
   );
 }
