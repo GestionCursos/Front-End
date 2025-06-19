@@ -31,10 +31,12 @@ export default function Solicitudes() {
     const [errorModal, setErrorModal] = useState<string | null>(null);
     const [successModal, setSuccessModal] = useState<string | null>(null);
     const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
-    const abrirModal = (idSolicitud: number, estado: "Aprobado" | "Rechazado") => {
+    const [tipoCambioSeleccionado, setTipoCambioSeleccionado] = useState<string | null>(null);
+    const abrirModal = (idSolicitud: number, estado: "Aprobado" | "Rechazado", tipoCambio?: string) => {
         setSelectedSolicitudId(idSolicitud);
         setNuevoEstado(estado);
         setModalVisible(true);
+        if (tipoCambio) setTipoCambioSeleccionado(tipoCambio);
     };
 
     const { solicitudes, loading, refetch, setSolicitudes } = useSolicitudesGenerales();
@@ -48,19 +50,29 @@ export default function Solicitudes() {
     }, [refetch]);
 
     const confirmarCambioEstado = async () => {
-        if (!selectedSolicitudId || !nuevoEstado || !descripcion.trim()) {
-            setErrorModal("Por favor escribe una descripción.");
+        if (!selectedSolicitudId || !nuevoEstado || !descripcion.trim() || (nuevoEstado === 'Aprobado' && !tipoCambioSeleccionado)) {
+            setErrorModal("Por favor completa todos los campos obligatorios.");
+            return;
+        }
+        if (!selectedSolicitudId) {
+            setErrorModal("Error interno: No se encontró el ID de la solicitud.");
             return;
         }
 
-        const payload = {
-            idSolicitud: selectedSolicitudId,
-            estado: nuevoEstado,
-            justificacion: descripcion.trim(),
-        };
-
+        // No incluir idSolicitud en el payload, solo en la URL
+        const payload: any = {};
+        if (typeof nuevoEstado === 'string' && nuevoEstado) {
+            payload.estado = nuevoEstado;
+        }
+        if (typeof descripcion === 'string' && descripcion.trim()) {
+            payload.descripcion = descripcion.trim();
+        }
+        if (nuevoEstado === 'Aprobado') {
+            payload.otroTipo = tipoCambioSeleccionado;
+        }
+        console.log('Payload enviado a actualizarEstado:', payload);
         try {
-            const result = await Solicitud.actualizarEstado(payload);
+            const result = await Solicitud.actualizarEstado(selectedSolicitudId, payload);
 
             if (result) {
                 // Actualiza el estado local de la solicitud cambiando su estado
@@ -81,6 +93,7 @@ export default function Solicitudes() {
         setSelectedSolicitudId(null);
         setNuevoEstado(null);
         setDescripcion("");
+        setTipoCambioSeleccionado(null);
     };
 
     // Función de filtrado tipada
@@ -141,7 +154,7 @@ export default function Solicitudes() {
                                             <SolicitudCardPendiente
                                                 key={sol.idSolicitud}
                                                 solicitud={sol}
-                                                onAprobar={() => abrirModal(sol.idSolicitud, 'Aprobado')}
+                                                onAprobar={(tipoCambio: string) => abrirModal(sol.idSolicitud, 'Aprobado', tipoCambio)}
                                                 onRechazar={() => abrirModal(sol.idSolicitud, 'Rechazado')}
                                                 onSuccess={(msg: string) => handleSuccess(msg, refetch)}
                                             />

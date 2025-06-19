@@ -39,14 +39,20 @@ class Solicitud {
         console.log(data);
         return data;
     }
-    static async actualizarEstado(payload: {
-        idSolicitud: number;
-        estado: 'Aprobado' | 'Rechazado';
-        justificacion: string;
+    static async actualizarEstado(idSolicitud: number, payload: {
+        estado?: 'Aprobado' | 'Rechazado' | string;
+        descripcion?: string;
+        tipoCambio?: string;
+        otroTipo?: string;
+        colaboradorGithub?: string;
+        colaboradorGithubBackend?: string;
+        colaboradorGithubFrontend?: string;
+        ramaBackend?: string;
+        ramaFrontend?: string;
     }) {
         const idTokenString = StorageNavegador.getItemWithExpiry("user") as Users;
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/registro-aprobacion`, {
-            method: 'POST',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/solicitud/actualizar/${idSolicitud}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 "Authorization": `Bearer ${idTokenString?.token}`
