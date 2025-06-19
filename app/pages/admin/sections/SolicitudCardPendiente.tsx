@@ -42,8 +42,10 @@ export default function SolicitudCardPendiente({ solicitud, onAprobar, onRechaza
       <div className="p-4 space-y-4">
         <div className="flex justify-between items-start mb-2">
           <div className="truncate max-w-[70%]">
-            <h3 className="text-lg font-bold text-yellow-900 truncate">{solicitud.idUser.nombres} {solicitud.idUser.apellidos}</h3>
-            <p className="text-xs text-gray-500 truncate">{solicitud.idUser.correo}</p>
+            <h3 className="text-lg font-bold text-yellow-900 truncate">
+              {(solicitud.idUser?.nombres || 'Anónimo')} {(solicitud.idUser?.apellidos || '')}
+            </h3>
+            <p className="text-xs text-gray-500 truncate">{solicitud.idUser?.correo || 'Sin correo'}</p>
           </div>
           <span className="capitalize px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 font-bold border border-yellow-300 shadow-sm">Pendiente</span>
         </div>
