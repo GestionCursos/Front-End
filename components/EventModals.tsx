@@ -67,20 +67,29 @@ export function RegistrationSuccessModal({ open, onClose }: { open: boolean; onC
     </Dialog>
   );
 }
-
-export function RegistrationErrorModal({ open, onClose, errorMessage }: { open: boolean; onClose: () => void; errorMessage: string }) {
+interface ModalMensajeProps {
+  open: boolean;
+  onClose: () => void;
+  errorMessage: string;
+  titulo: string;
+  onConfirm?: () => void; // 👈 nuevo
+}
+export function ModalMensaje({ open, onClose, errorMessage, titulo, onConfirm }: ModalMensajeProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
           <AlertCircle className="h-12 w-12 text-red-500 mb-4 mx-auto animate-bounce" />
-          <DialogTitle className="text-2xl font-bold mb-2 text-primary text-center">Error al inscribirse</DialogTitle>
+          <DialogTitle className="text-2xl font-bold mb-2 text-primary text-center">{titulo}</DialogTitle>
           <DialogDescription className="mb-6 text-gray-700 text-center">
             {errorMessage}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button onClick={onClose} variant="default" className="w-full">Cerrar</Button>
+        <DialogFooter className="flex justify-between">
+          <Button onClick={onClose} variant="secondary">Cancelar</Button>
+          {onConfirm && (
+            <Button onClick={onConfirm} variant="destructive">Eliminar</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
