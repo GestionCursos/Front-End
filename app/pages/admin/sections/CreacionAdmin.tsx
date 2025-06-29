@@ -68,7 +68,7 @@ class UsuarioService {
   }
 
   static async crearUsuario(usuario: Omit<FormularioUsuario, "confirmarContraseña">): Promise<boolean> {
-    const token = await FirebaseService.registerWithEmailAndPassword(usuario.correo, usuario.contraseña, usuario.nombres, true);
+    const token = await FirebaseService.registerWithEmailAndPassword(usuario.correo, usuario.contraseña, usuario.nombres, usuario.rol, true);
     const { contraseña, ...data } = usuario
     const useaAlmacenar = {
       ...data,
@@ -127,7 +127,7 @@ export default function CrearUsuariosAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [mostrarContraseña, setMostrarContraseña] = useState(false)
   const [mostrarConfirmarContraseña, setMostrarConfirmarContraseña] = useState(false)
-  const [modalEliminar, setModalEliminar] = useState<{ visible: boolean; usuario: Usuario | null }>({
+  const [modalEliminar, setModalEliminar] = useState<{ visible: boolean; usuario: any | null }>({
     visible: false,
     usuario: null,
   })
@@ -316,6 +316,7 @@ export default function CrearUsuariosAdmin() {
               error={error}
               loading={loading}
               onRetry={cargarUsuarios}
+              rol="Administrador General"
               onDelete={(usuario) => setModalEliminar({ visible: true, usuario })}
             />
 
@@ -325,6 +326,7 @@ export default function CrearUsuariosAdmin() {
               error={error}
               loading={loading}
               onRetry={cargarUsuarios}
+              rol="Desarrollador"
               onDelete={(usuario) => setModalEliminar({ visible: true, usuario })}
             />
 
