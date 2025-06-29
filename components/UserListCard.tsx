@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
-  Users,
-  Loader2,
-  RefreshCw,
-  AlertCircle,
-  Trash2,
-  Shield,
-  Mail,
-  Phone,
-  Calendar,
+    Users,
+    Loader2,
+    RefreshCw,
+    AlertCircle,
+    Trash2,
+    Shield,
+    Mail,
+    Phone,
+    Calendar,
 } from "lucide-react"
 
 
@@ -33,6 +33,7 @@ interface Props {
     error: string | null;
     loading: boolean;
     onRetry: () => void;
+    rol: string;
     onDelete: (usuario: User) => void;
 }
 
@@ -43,7 +44,8 @@ export const UserListCard = ({
     loading,
     onRetry,
     onDelete,
-}: Props) => {
+    rol,
+}: Props,) => {
     return (
         <div className="lg:col-span-2">
             <Card>
@@ -87,7 +89,7 @@ export const UserListCard = ({
                                         <TableHead>Contacto</TableHead>
                                         <TableHead>Rol</TableHead>
                                         <TableHead>Estado</TableHead>
-                                        <TableHead>Fecha Creación</TableHead>
+                                        <TableHead>Fecha CreaciÃ³n</TableHead>
                                         <TableHead>Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -124,17 +126,17 @@ export const UserListCard = ({
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="outline">admin2</Badge>
+                                                <Badge variant="outline">{rol}</Badge>
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={
-                                                        usuario.estado === "Activo"
+                                                        usuario.estado === "activo"
                                                             ? "default"
                                                             : "secondary"
                                                     }
                                                 >
-                                                    {usuario.estado}
+                                                    {usuario.estado || "activo"}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
