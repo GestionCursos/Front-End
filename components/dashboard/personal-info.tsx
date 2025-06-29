@@ -3,48 +3,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "../ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Badge } from "../ui/badge"
 import User from "../../app/models/User"
-import { 
-  User as UserIcon,
-  Mail,
-  Phone,
-  MapPin,
-  GraduationCap,
-  Edit,
-  Save,
-  X,
-  Camera,
-  CreditCard,
-  Shield
-} from "lucide-react"
-
-import { getCertificadosByUsuario } from "../../app/Services/certificadoService"
+import { User as UserIcon, Mail, Phone, MapPin, GraduationCap, Edit, Save, X, Camera, CreditCard, Shield } from "lucide-react"
 import { updateUsuario, getUsuarioByFirebaseUid, getDashboardDataUsuario, updateUsuarioPassword } from "../../app/Services/usuarioService"
+import { useRouter } from "next/navigation"
+import StorageNavegador from "@/app/Services/StorageNavegador"
 
-interface PersonalInfoProps {
-  user: User
-}
 
-export function PersonalInfo({ user }: PersonalInfoProps) {
+export function PersonalInfo() {
+  const [user, setUser] = useState<User>()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const user = StorageNavegador.getItemWithExpiry("user") as User;
+      if (user) {
+        setUser(user);
+        if (typeof user === "object" && "rol" in user) {
+          // Redirecciona según rol
+          if (["admin", "admin2", "desarrollador"].includes(user.rol)) {
+            router.push("/pages/admin/dashboard");
+          } else {
+            router.push("/pages/client/dashboard");
+          }
+        } else {
+          // Usuario sin rol válido -> login
+          router.push("/pages/login");
+        }
+      } else {
+        // No hay usuario -> login
+        router.push("/pages/login");
+      }
+    }
+    setLoading(false);
+  }, []);
+
+
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    nombres: user.nombres || "",
-    apellidos: user.apellidos || "",
-    correo: user.correo || user.email || "",
-    cedula: user.cedula || "",
-    telefono: user.telefono || "",
-    direccion: user.direccion || "",
-    carrera: user.carrera || "",
-    url_foto: user.url_foto || user.urlUserImg || ""
+    nombres: "",
+    apellidos: "",
+    correo: "",
+    cedula: "",
+    telefono: "",
+    direccion: "",
+    carrera: "",
+    url_foto: "",
   })
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nombres: user.nombres || "",
+        apellidos: user.apellidos || "",
+        correo: user.correo || user.email || "",
+        cedula: user.cedula || "",
+        telefono: user.telefono || "",
+        direccion: user.direccion || "",
+        carrera: user.carrera || "",
+        url_foto: user.url_foto || user.urlUserImg || ""
+      })
+    }
+  }, [user])
   const [accountInfo, setAccountInfo] = useState({
     memberSince: "-",
     lastLogin: "-",
@@ -69,6 +90,10 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
       setLoading(true)
       setError(null)
       try {
+        if (!user) {
+          return <div className="p-4 text-center">Cargando usuario...</div>
+        }
+
         const uid = user.uid_firebase || user.uid || ""
         if (!uid) {
           setLoading(false)
@@ -86,7 +111,7 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
             telefono: dashboardData.user.telefono || "",
             direccion: dashboardData.user.direccion || "",
             carrera: dashboardData.user.carrera || "",
-            url_foto: dashboardData.user.url_foto || dashboardData.user.urlUserImg || ""
+            url_foto: dashboardData.user.url_foto || dashboardData.user.urlUserImg || "",
           })
         }
         // Estadísticas
@@ -95,9 +120,9 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
           memberSince: "-", // Puedes mapear si el backend lo provee
           lastLogin: "-",   // Puedes mapear si el backend lo provee
           totalEvents: eventos.length,
-          completedEvents: eventos.filter((i:any) => i.estado_inscripcion === 'completado').length,
-          certificates: eventos.filter((i:any) => i.estado_inscripcion === 'completado' && i.nota >= 70).length, // Ejemplo
-          attendances: eventos.reduce((sum:any, i:any) => sum + (i.porcentaje_asistencia || 0), 0)
+          completedEvents: eventos.filter((i: any) => i.estado_inscripcion === 'completado').length,
+          certificates: eventos.filter((i: any) => i.estado_inscripcion === 'completado' && i.nota >= 70).length, // Ejemplo
+          attendances: eventos.reduce((sum: any, i: any) => sum + (i.porcentaje_asistencia || 0), 0)
         })
       } catch (e: any) {
         setError(e.message || "Error cargando estadísticas")
@@ -108,6 +133,10 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
   }, [user])
 
   const reloadUserData = async () => {
+    if (!user) {
+      return <div className="p-4 text-center">Cargando usuario...</div>
+    }
+
     setLoading(true)
     setError(null)
     try {
@@ -122,7 +151,7 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
         telefono: backendUser.telefono || "",
         direccion: backendUser.direccion || "",
         carrera: backendUser.carrera || "",
-        url_foto: backendUser.url_foto || backendUser.urlUserImg || ""
+        url_foto: backendUser.url_foto || backendUser.urlUserImg || "",
       })
     } catch (e: any) {
       setError("No se pudo recargar los datos del usuario")
@@ -143,7 +172,14 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
     setError(null)
     setSuccess(null)
     try {
-      const uid = user.uid_firebase || user.uid || ""
+      if (!user) {
+        throw new Error("No se encontró el usuario")
+      }
+
+      const uid = user.uid_firebase || user.uid || "";
+      if (!uid) {
+        throw new Error("No se encontró el UID del usuario")
+      }
       if (!uid) throw new Error("No se encontró el UID del usuario")
       // If password fields are shown and filled, validate and update password
       if (showPasswordFields && (passwordFields.currentPassword || passwordFields.newPassword || passwordFields.confirmPassword)) {
@@ -158,7 +194,6 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
         setSuccess("Contraseña actualizada correctamente.")
       }
       // Update user data
-      await updateUsuario(uid, formData)
       setIsEditing(false)
       setShowPasswordFields(false)
       setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
@@ -171,6 +206,10 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
   }
 
   const handleCancel = () => {
+    if (!user) {
+      return <div className="p-4 text-center">Cargando usuario...</div>
+    }
+
     setFormData({
       nombres: user.nombres || "",
       apellidos: user.apellidos || "",
@@ -179,29 +218,11 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
       telefono: user.telefono || "",
       direccion: user.direccion || "",
       carrera: user.carrera || "",
-      url_foto: user.url_foto || user.urlUserImg || ""
+      url_foto: user.url_foto || user.urlUserImg || "",
     })
     setIsEditing(false)
     setShowPasswordFields(false)
     setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
-  }
-
-  const getUserRole = (rol: string) => {
-    const roles = {
-      'admin': { label: 'Administrador', color: 'bg-red-100 text-red-800' },
-      'instructor': { label: 'Instructor', color: 'bg-blue-100 text-blue-800' },
-      'estudiante': { label: 'Estudiante', color: 'bg-green-100 text-green-800' }
-    }
-    return roles[rol as keyof typeof roles] || { label: 'Usuario', color: 'bg-gray-100 text-gray-800' }
-  }
-
-  const getStatusBadge = (estado: string) => {
-    const statuses = {
-      'activo': { label: 'Activo', color: 'bg-green-100 text-green-800' },
-      'inactivo': { label: 'Inactivo', color: 'bg-red-100 text-red-800' },
-      'suspendido': { label: 'Suspendido', color: 'bg-yellow-100 text-yellow-800' }
-    }
-    return statuses[estado as keyof typeof statuses] || { label: 'Sin definir', color: 'bg-gray-100 text-gray-800' }
   }
 
   return (
@@ -248,9 +269,9 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
               <div className="relative inline-block">
                 <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto overflow-hidden">
                   {formData.url_foto ? (
-                    <img 
-                      src={formData.url_foto} 
-                      alt="Perfil" 
+                    <img
+                      src={formData.url_foto}
+                      alt="Perfil"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -258,8 +279,8 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
                   )}
                 </div>
                 {isEditing && (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0"
                     variant="default"
                   >
@@ -269,12 +290,17 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-foreground">
-                  {`${formData.nombres} ${formData.apellidos}` || user.username}
+                  {`${formData.nombres} ${formData.apellidos}` || user?.username}
                 </h3>
                 <div className="flex justify-center mt-2">
-                  <Badge className={`${getUserRole(user.rol).color} text-xs`}>
-                    {getUserRole(user.rol).label}
-                  </Badge>
+                  {user?.rol && (
+                    <div className="flex justify-center mt-2">
+                      <Badge className={`${user.rol} text-xs`}>
+                        {user.rol}
+                      </Badge>
+                    </div>
+                  )}
+
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Miembro desde {accountInfo.memberSince}
@@ -290,9 +316,10 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Estado</span>
-                <Badge className={`${getStatusBadge(user.estado).color} text-xs`}>
-                  {getStatusBadge(user.estado).label}
+                <Badge className={`${user?.estado || ""} text-xs`}>
+                  ACTIVO
                 </Badge>
+
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Eventos totales</span>
@@ -414,8 +441,8 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
                 <div className="space-y-2">
                   <Label htmlFor="carrera">Carrera</Label>
                   {isEditing ? (
-                    <Select 
-                      value={formData.carrera} 
+                    <Select
+                      value={formData.carrera}
                       onValueChange={(value) => handleInputChange("carrera", value)}
                     >
                       <SelectTrigger className="auth-input">
@@ -463,13 +490,15 @@ export function PersonalInfo({ user }: PersonalInfoProps) {
                 <Label>Estado de Verificación</Label>
                 <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                   <Shield className="h-4 w-4 text-muted-foreground" />
-                  <Badge className={`${
-                    user.verify ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  } text-xs`}>
-                    {user.verify ? 'Verificado' : 'Pendiente de verificación'}
+                  <Badge
+                    className={`${user?.verify ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      } text-xs`}
+                  >
+                    {user?.verify ? 'Verificado' : 'Pendiente de verificación'}
                   </Badge>
                 </div>
               </div>
+
 
               {isEditing && showPasswordFields && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,11 +1,9 @@
 import User from "../../app/models/User"
-import StorageNavegador from "../../app/Services/StorageNavegador"
 import {
   LayoutDashboard,
   BookOpen,
   User as UserIcon,
   Award,
-  Settings,
   LogOut,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -46,7 +44,8 @@ export function UserSidebar({ active, onSelect, user }: UserSidebarProps) {
   }, [])
 
   return (
-    <aside className="w-64 h-full flex flex-col justify-between bg-card border-r border-border shadow-sm">      {/* Header */}
+    <div className="space-y-4">
+
       <div className="p-6 border-b border-border">
         <div className="flex items-center">
           <h2 className="text-lg font-bold text-primary">Dashboard</h2>
@@ -60,11 +59,10 @@ export function UserSidebar({ active, onSelect, user }: UserSidebarProps) {
             <button
               key={id}
               onClick={() => onSelect(id)}
-              className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium transition-all duration-200 ${
-                active === id
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium transition-all duration-200 ${active === id
+                ? "bg-primary/10 text-primary border border-primary/20"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                }`}
             >
               <Icon size={20} />
               {label}
@@ -102,6 +100,6 @@ export function UserSidebar({ active, onSelect, user }: UserSidebarProps) {
           </div>
         )}
       </div>
-    </aside>
+    </div>
   )
 }
