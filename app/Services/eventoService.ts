@@ -1,4 +1,3 @@
-
 import StorageNavegador from "./StorageNavegador";
 import Users from "../models/User";
 import { Evento } from "../models/CrearEvento";
@@ -93,29 +92,44 @@ export async function obtenerEventosPopulares() {
     return dat;
 }
 
-
-export async function obtenerEventos() {
-    const res = await fetch(`${API_URL}`, {
+/**
+ * Obtener evento por ID
+ */
+export async function getEventoPorId(id: string) {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const res = await fetch(`${API_URL}/${id}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
-        },
+            "Authorization": `Bearer ${user.token}`
+        }
     });
-    if (!res.ok) throw new Error('Error al obtener datos dashboard');
-    const dat = await res.json();
-    return dat;
+    if (!res.ok) throw new Error('Error al obtener evento');
+    const evento = await res.json();
+    return evento;
 }
 
-export async function eliminarEvento(id: number) {
+/**
+ * Actualizar evento
+ */
+export async function actualizarEvento(id: number, data: any) {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const res = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
+        method: 'PATCH', // Cambiado de PUT a PATCH
         headers: {
             'Content-Type': 'application/json',
             "Authorization": `Bearer ${user.token}`
         },
+        body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Error al obtener datos dashboard');
-    const dat = await res.json();
-    return dat;
+    
+    if (!res.ok) {
+        const errorData = await res.text();
+        console.error('Error del backend:', errorData);
+        throw new Error(`Error al actualizar evento: ${res.status} - ${errorData}`);
+    }
+    
+    const evento = await res.json();
+    return evento;
 }
+
