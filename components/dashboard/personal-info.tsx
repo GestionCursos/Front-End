@@ -702,52 +702,7 @@ export function PersonalInfo({ user: propUser }: { user?: User }) {
               )}
             </CardContent>
           </Card>
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Configuración de Cuenta</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Notificaciones por email</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Recibe actualizaciones sobre tus eventos y certificados
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configurar
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Privacidad del perfil</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Controla quién puede ver tu información
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Gestionar
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Cambiar contraseña</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Actualiza tu contraseña de acceso
-                  </p>
-                </div>
-                {isEditing ? (
-                  <Button variant="outline" size="sm" onClick={() => setShowPasswordFields(v => !v)}>
-                    {showPasswordFields ? "Ocultar" : "Editar"}
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" disabled>
-                    Cambiar
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </div>
     </div>
