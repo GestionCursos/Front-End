@@ -11,6 +11,7 @@ export interface EventoFormProps {
     setSubiendo: (value: boolean) => void;
     carreras: Array<{ id: number; nombre: string }>; // ejemplo de estructura
     organizadores: Organizador[];
+    setOrganizadores: React.Dispatch<React.SetStateAction<Array<any>>>;
     secciones: Array<{ id_seccion: number; nombre: string }>;
     requisitos: Array<{ id: number; nombre: string }>;
     setRequisitos: React.Dispatch<React.SetStateAction<Array<{ id: number; nombre: string }>>>;

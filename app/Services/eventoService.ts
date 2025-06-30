@@ -93,3 +93,29 @@ export async function obtenerEventosPopulares() {
     return dat;
 }
 
+
+export async function obtenerEventos() {
+    const res = await fetch(`${API_URL}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = await res.json();
+    return dat;
+}
+
+export async function eliminarEvento(id: number) {
+    const user = StorageNavegador.getItemWithExpiry("user") as Users;
+    const res = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${user.token}`
+        },
+    });
+    if (!res.ok) throw new Error('Error al obtener datos dashboard');
+    const dat = await res.json();
+    return dat;
+}

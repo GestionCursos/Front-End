@@ -4,12 +4,12 @@ import React from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { crearOrganizador } from "@/app/Services/organizadorService";
-import { CreateOrganizadorDTO } from "@/app/models/Organizador";
+import { CreateOrganizadorDTO, Organizador } from "@/app/models/Organizador";
 
 interface OrganizadorFormProps {
     visible: boolean;
     onCancel: () => void;
-    onCreated: (organizador: CreateOrganizadorDTO) => void;
+    onCreated: (organizador: Organizador) => void;
 }
 
 export const OrganizadorForm: React.FC<OrganizadorFormProps> = ({ visible, onCancel, onCreated }) => {
@@ -21,8 +21,13 @@ export const OrganizadorForm: React.FC<OrganizadorFormProps> = ({ visible, onCan
             return;
         }
         try {
-            const nuevo = await crearOrganizador(nuevoOrganizador);
-            onCreated(nuevo);
+            const nuevoDTO: CreateOrganizadorDTO = {
+                nombre: nuevoOrganizador.nombre,
+                institucion: nuevoOrganizador.institucion,
+                correo: nuevoOrganizador.correo
+            };
+            const nuevo = await crearOrganizador(nuevoDTO);
+            onCreated(nuevo as Organizador);
             setNuevoOrganizador({ nombre: "", institucion: "", correo: "" });
         } catch (err) {
             console.error("Error al crear organizador:", err);
