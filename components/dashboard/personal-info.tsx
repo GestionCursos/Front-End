@@ -515,9 +515,6 @@ export function PersonalInfo({ user: propUser }: { user?: User }) {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Miembro desde {accountInfo.memberSince}
-                </p>
               </div>
             </CardContent>
           </Card>
