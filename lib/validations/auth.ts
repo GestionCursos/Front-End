@@ -42,8 +42,8 @@ export const registerSchema = z
     profileImage: z.any().optional(),
     telefono: z
       .string()
-      .min(7, { message: "El teléfono es obligatorio y debe tener al menos 7 dígitos" })
-      .max(20, { message: "El teléfono no puede exceder los 20 caracteres" }),
+      .length(10, { message: "El número de teléfono debe contener exactamente 10 dígitos." })
+      .regex(/^\d{10}$/, { message: "El número de teléfono solo puede contener dígitos numéricos" }),
     direccion: z
       .string()
       .min(1, { message: "La dirección es obligatoria" })
