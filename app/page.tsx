@@ -18,6 +18,7 @@ export default function Home() {
   const [showFullDesc, setShowFullDesc] = useState<{ [id: number]: boolean }>({})
   const [modalAutoridad, setModalAutoridad] = useState<any | null>(null)
   const [eventosDestacados, setEventosDestacados] = useState<any[]>([]);
+  const [proximosEventos, setProximosEventos] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchContenido() {
@@ -26,6 +27,11 @@ export default function Home() {
         setContenido(data)
         const eventosDestacadis = await obtenerEventosPopulares();
         setEventosDestacados(eventosDestacadis);
+        
+        // Cargar todos los eventos para "Próximos eventos"
+        const todosEventos = await obtenerEventosPopulares(); // O usar otro servicio para obtener todos los eventos
+        setProximosEventos(todosEventos.slice(0, 3)); // Mostrar solo los primeros 3
+        
         console.log(eventosDestacadis)
       } catch (error) {
         setContenido([])
@@ -315,45 +321,26 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Conferencia de Desarrollo Web 2023",
-                date: "15 de Junio, 2023",
-                location: "Madrid, España",
-                image: "https://www.caf.com/media/4662282/esp-conferencia_washington-2023.png",
-              },
-              {
-                title: "Workshop de UX/UI Design",
-                date: "22 de Junio, 2023",
-                location: "Barcelona, España",
-                image: "https://prismmecom.b-cdn.net/media/3716/prism-blog-banner-3a.jpg",
-              },
-              {
-                title: "Masterclass de Marketing Digital",
-                date: "30 de Junio, 2023",
-                location: "Valencia, España",
-                image: "https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/sites/97591/images/kD74jelyRRS8GrGmBKKU_file.jpg",
-              },
-            ].map((event, index) => (
+            {proximosEventos.map((event: any) => (
               <div
-                key={index}
+                key={event.id_evento}
                 className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
                 <div className="relative h-48">
-                  <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
+                  <Image src={event.urlfoto || "/placeholder.svg"} alt={event.nombre} fill className="object-cover" />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2">{event.title}</h3>
+                  <h3 className="font-bold text-lg mb-2">{event.nombre}</h3>
                   <div className="flex items-center text-muted-foreground mb-2">
                     <Calendar className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{event.date}</span>
+                    <span className="text-sm">{event.fecha_inicio || 'Fecha por confirmar'}</span>
                   </div>
                   <div className="flex items-center text-muted-foreground mb-4">
                     <MapPin className="h-4 w-4 mr-2" />
-                    <span className="text-sm">{event.location}</span>
+                    <span className="text-sm">{event.ubicacion || 'Ubicación por confirmar'}</span>
                   </div>
                   <Button asChild className="w-full auth-button">
-                    <Link href={``}>Reservar plaza</Link>
+                    <Link href={`/sections/events_detail/${event.id_evento}`}>Ver detalles</Link>
                   </Button>
                 </div>
               </div>
