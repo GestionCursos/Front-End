@@ -10,13 +10,14 @@ import { useEffect, useState } from "react"
 import * as contenidoHomeService from "./Services/contenidoHomeService"
 import * as autoridadesService from "./Services/autoridadesService"
 import { obtenerEventosPopulares } from "./Services/eventoService"
+import { GraduationCap, BookOpenCheck, School } from "lucide-react"
 
 export default function Home() {
   const [contenido, setContenido] = useState<any>(null)
   const [autoridades, setAutoridades] = useState<any[]>([])
   const [showFullDesc, setShowFullDesc] = useState<{ [id: number]: boolean }>({})
   const [modalAutoridad, setModalAutoridad] = useState<any | null>(null)
-  const [eventosDestacados, setEventosDestacados] = useState([]);
+  const [eventosDestacados, setEventosDestacados] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchContenido() {
@@ -70,7 +71,7 @@ export default function Home() {
   return (
     <SiteLayout>
       {/* Hero Section */}
-       <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-white -z-10"></div>
         <div className="absolute inset-0 opacity-10 -z-10">
           <div className="absolute top-10 left-10 w-20 h-20 rounded-full bg-red-200"></div>
@@ -198,34 +199,83 @@ export default function Home() {
 
           {/* Modal para mostrar información completa de la autoridad */}
           {modalAutoridad && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-              <div className="bg-white rounded-xl shadow-2xl p-0 max-w-md w-[95vw] max-h-[90vh] relative flex flex-col animate-fade-in">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div className="bg-white rounded-xl shadow-2xl p-0 max-w-4xl w-full max-h-[90vh] relative flex flex-col animate-fade-in">
                 <button
-                  className="absolute top-2 right-2 text-primary text-2xl font-bold hover:text-red-500 z-10"
+                  className="absolute top-4 right-4 text-primary text-3xl font-bold hover:text-red-500 z-10 w-10 h-10 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
                   onClick={() => setModalAutoridad(null)}
                   aria-label="Cerrar"
                 >
                   ×
                 </button>
-                <div className="flex flex-col items-center p-6 overflow-y-auto" style={{ maxHeight: '80vh' }}>
-                  <div className="relative w-24 h-24 rounded-full overflow-hidden shadow mb-4 border-2 border-primary/20 bg-white flex items-center justify-center">
-                    <Image
-                      src={modalAutoridad.foto_url}
-                      alt={modalAutoridad.nombre}
-                      fill
-                      className="object-contain"
-                      style={{ objectPosition: 'center top' }}
-                    />
+                <div className="flex flex-col lg:flex-row items-start p-8 overflow-y-auto gap-8" style={{ maxHeight: '85vh' }}>
+                  {/* Columna izquierda - Foto y datos básicos */}
+                  <div className="flex flex-col items-center lg:w-1/3 lg:min-w-[300px] lg:sticky lg:top-0">
+                    <div className="relative w-40 h-40 rounded-full overflow-hidden shadow-lg mb-6 border-4 border-primary/20 bg-white flex items-center justify-center">
+                      <Image
+                        src={modalAutoridad.foto_url}
+                        alt={modalAutoridad.nombre}
+                        fill
+                        className="object-contain"
+                        style={{ objectPosition: 'center top' }}
+                      />
+                    </div>
+                    <h4 className="font-bold text-2xl text-primary mb-3 text-center uppercase tracking-wide">{modalAutoridad.nombre}</h4>
+                    <p className="text-lg text-primary/80 mb-4 text-center font-semibold uppercase tracking-wider">{modalAutoridad.cargo}</p>
                   </div>
-                  <h4 className="font-bold text-lg text-primary mb-1 text-center uppercase tracking-wide">{modalAutoridad.nombre}</h4>
-                  <p className="text-sm text-primary/80 mb-3 text-center font-semibold uppercase tracking-wider">{modalAutoridad.cargo}</p>
-                  <div className="text-sm text-muted-foreground text-justify w-full px-0" style={{ lineHeight: '1.6' }}>
-                    {modalAutoridad.descripcion.split(/(TERCER NIVEL|CUARTO NIVEL|DOCTORADO|MAESTR[ÍI]A|DIPLOMA[DT]O|LICENCIAD[OA]|INGENIER[OA]|ECONOMISTA|PSIC[ÓO]LOG[OA]|ABOGAD[OA]|PROFESOR[AE]|T[ÉE]CNIC[OA]|MAGISTER|DOCTORA?)/gi).map((part: string, idx: number) => {
-                      if (["TERCER NIVEL", "CUARTO NIVEL", "DOCTORADO", "MAESTRÍA", "MAESTRIA", "DIPLOMADO", "DIPLOMATA", "LICENCIADO", "LICENCIADA", "INGENIERO", "INGENIERA", "ECONOMISTA", "PSICÓLOGA", "PSICÓLOGO", "ABOGADA", "ABOGADO", "PROFESORA", "PROFESOR", "TÉCNICO", "TÉCNICA", "MAGISTER", "DOCTORA", "DOCTOR"].includes(part.trim().toUpperCase())) {
-                        return <div key={idx} className="mt-2 mb-1 font-bold text-primary/90 text-xs tracking-widest uppercase">{part}</div>;
-                      }
-                      return <span key={idx}>{part}</span>;
-                    })}
+                  
+                  {/* Columna derecha - Descripción */}
+                  <div className="flex-1 lg:w-2/3">
+                    <div className="text-base text-muted-foreground text-justify space-y-4" style={{ lineHeight: '1.7' }}>
+                      {modalAutoridad.descripcion
+                        .split('\n')
+                        .filter((line: string) => line.trim() !== '')
+                        .map((line: string, idx: number) => {
+                          const upper = line.toUpperCase();
+                          const isHeading = [
+                            'TERCER NIVEL',
+                            'CUARTO NIVEL',
+                            'DOCTORADO',
+                            'MAESTRÍA',
+                            'MAESTRIA',
+                            'DIPLOMADO',
+                            'LICENCIADO',
+                            'LICENCIADA',
+                            'INGENIERO',
+                            'INGENIERA',
+                            'PSICÓLOGA',
+                            'PSICÓLOGO',
+                            'ABOGADA',
+                            'ABOGADO',
+                            'PROFESORA',
+                            'PROFESOR',
+                            'TÉCNICO',
+                            'TÉCNICA',
+                            'MAGISTER',
+                            'DOCTORA',
+                            'DOCTOR',
+                          ].includes(upper.trim());
+
+                          if (isHeading) {
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-3 mt-8 mb-3 font-bold text-primary text-lg uppercase tracking-widest border-b-2 border-primary/20 pb-3"
+                              >
+                                <GraduationCap className="w-6 h-6 text-primary" />
+                                {line}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={idx} className="flex items-start gap-3 mb-3">
+                              <BookOpenCheck className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
+                              <p className="text-base leading-relaxed">{line}</p>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 </div>
               </div>
