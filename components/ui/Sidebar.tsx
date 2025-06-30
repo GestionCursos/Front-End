@@ -38,6 +38,7 @@ const navItems = [
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
   { id: "gestion_cambio", label: "Gestión de Cambio", icon: UserIcon, rolesPermitidos: [""] },
   { id: "estadisticas", label: "Estadisticas", icon: UserIcon, rolesPermitidos: ["desarrollador"] },
+  { id: "auditoria", label: "Auditoria", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {

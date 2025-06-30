@@ -16,6 +16,7 @@ import CreacionAdmin from '../sections/CreacionAdmin';
 import AdminLayout from '../layout';
 import Secciones from '../sections/Secciones';
 import EstadisticasACS from '../sections/EstadisticasACS';
+import AuditDashboard from '../sections/AuditDashboard';
 
 const sectionComponents: { [key: string]: React.ReactNode } = {
   dashboard: <Inicio />,
@@ -30,7 +31,8 @@ const sectionComponents: { [key: string]: React.ReactNode } = {
   inscripciones: <Inscripciones />,
   gestion_cambio: <GestionCambio />,
   Secciones: <Secciones />,
-  estadisticas: <EstadisticasACS />
+  estadisticas: <EstadisticasACS />,
+  auditoria: <AuditDashboard />
 };
 
 export default function SidebarLayout() {
