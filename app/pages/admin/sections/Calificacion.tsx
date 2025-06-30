@@ -21,8 +21,9 @@ export default function Calificacion() {
     useEffect(() => {
         const fetchCursos = async () => {
             try {
-                const data = await getEventos();
-                setCursos(data);
+                const data: any[] = await getEventos();
+                const activos = data.filter(evento => evento.estado === "Activo");
+                setCursos(activos);
             } catch (error) {
                 console.error("Error al cargar cursos:", error);
             }
@@ -34,7 +35,6 @@ export default function Calificacion() {
         const fecthEstudiantes = async () => {
             if (cursoSeleccionado !== null) {
                 const userss = await obtenerListaUsuarios(cursoSeleccionado);
-                console.log(userss)
                 setEstudiantes(userss)
             } else {
                 setEstudiantes({
