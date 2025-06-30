@@ -25,6 +25,8 @@ import {
 } from "lucide-react"
 import StorageNavegador from "@/app/Services/StorageNavegador"
 import { ShareSuccessModal } from "../ShareSuccessModal"
+import { PdfModal } from "../PdfModal"
+
 
 // Interface for certificate data with related event and inscription info
 
@@ -44,6 +46,8 @@ interface CertificatesProps {
 }
 
 export function Certificates({ user }: CertificatesProps) {
+  const [pdfModalOpen, setPdfModalOpen] = useState(false)
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
   const [certificates, setCertificates] = useState<SimpleCertificate[]>([]);
@@ -253,9 +257,16 @@ export function Certificates({ user }: CertificatesProps) {
                     {cert.categoria}
                   </Badge>
                   <div className="mt-2 flex gap-2">
-                    <Button size="sm" onClick={() => window.open(cert.url_certificado, '_blank')}>
-                      <Download className="h-4 w-4 mr-2" /> Descargar
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPdfUrl(cert.url_certificado)
+                        setPdfModalOpen(true)
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Ver PDF
                     </Button>
+
 
                     <Button
                       size="sm"
@@ -327,6 +338,14 @@ export function Certificates({ user }: CertificatesProps) {
         onClose={() => setShareModalOpen(false)}
         success={shareSuccess}
       />
+      {selectedPdfUrl && (
+        <PdfModal
+          open={pdfModalOpen}
+          onClose={() => setPdfModalOpen(false)}
+          pdfUrl={selectedPdfUrl}
+        />
+      )}
+
     </div>
   )
 }
