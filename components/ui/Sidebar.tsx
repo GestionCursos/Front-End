@@ -1,11 +1,11 @@
-import Users from "@/app/models/User";
+import User from "@/app/models/User";
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import {
   LayoutDashboard,
   UserPlus,
   Calendar,
   BookOpen,
-  User,
+  User as UserIcon,
   Settings,
   AlertCircleIcon,
   LogOut,
@@ -29,26 +29,30 @@ const navItems = [
   { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus, rolesPermitidos: ["admin"] },
   { id: "eventos", label: "Eventos", icon: Calendar, rolesPermitidos: ["admin", "admin2"] },
   { id: "Secciones", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
-  { id: "autoridades", label: "Autoridades", icon: User, rolesPermitidos: ["admin", "admin2"] },
+  { id: "autoridades", label: "Autoridades", icon: UserIcon, rolesPermitidos: ["admin", "admin2"] },
   { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["desarrollador", "admin2"] },
   { id: "solicitudes_admin", label: "Solicitudes (Admin)", icon: AlertCircleIcon, rolesPermitidos: ["admin"] },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings, rolesPermitidos: ["admin", "admin2"] },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon, rolesPermitidos: ["admin", "admin2"] },
   { id: "calificaciones", label: "Calificaciones", icon: Edit, rolesPermitidos: ["admin", "admin2"] },
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
-  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: [""] },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: UserIcon, rolesPermitidos: [""] },
+  { id: "estadisticas", label: "Estadisticas", icon: UserIcon, rolesPermitidos: ["desarrollador"] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
 
-  const user = StorageNavegador.getItemWithExpiry("user") as Users | null;
 
   const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
-
+  const [user, setUser] = useState<User | null>(null); // estado inicial
+  useEffect(() => {
+    const userFromStorage = StorageNavegador.getItemWithExpiry("user") as User | null;
+    setUser(userFromStorage);
+  }, []);
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/");
@@ -72,7 +76,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
         <h2 className="text-lg font-bold text-red-700 mb-6 px-2">Panel</h2>
         <nav className="space-y-1">
           {navItems
-            .filter(item => user && item.rolesPermitidos.includes(user.rol)) 
+            .filter(item => user && item.rolesPermitidos.includes(user.rol))
             .map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -104,7 +108,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           onClick={() => setMenuVisible(!menuVisible)}
           className="w-full flex items-center gap-3 text-sm text-gray-800 hover:bg-gray-100 rounded-md px-2 py-2"
         >
-          <User size={18} className="text-red-500" />
+          <UserIcon size={18} className="text-red-500" />
           <img src={user?.urlUserImg || "/placeholder-user.jpg"} alt="perfil" className="w-8 h-8 rounded-full" />
           <div className="text-left">
             <p className="font-semibold">{user?.username || "Usuario"}</p>
