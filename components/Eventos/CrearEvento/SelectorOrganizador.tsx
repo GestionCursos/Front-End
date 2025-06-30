@@ -5,12 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { OrganizadorForm } from "./Organizador";
+import { Organizador } from "@/app/models/Organizador";
 
-interface Organizador {
-    id: number;
-    nombre: string;
-    institucion: string;
-}
 
 interface SelectorOrganizadorProps {
     organizadores: Organizador[];
@@ -59,7 +55,7 @@ export const SelectorOrganizador: React.FC<SelectorOrganizadorProps> = ({
             >
                 <option value="">Seleccionar organizador</option>
                 {organizadoresFiltrados.map((org) => (
-                    <option key={org.id} value={org.id}>
+                    <option key={org.id} value={org.id?.toString() || ""}>
                         {org.nombre} - {org.institucion}
                     </option>
                 ))}
@@ -69,10 +65,16 @@ export const SelectorOrganizador: React.FC<SelectorOrganizadorProps> = ({
                 <OrganizadorForm
                     visible={formVisible}
                     onCancel={() => setFormVisible(false)}
-                    onCreated={(nuevo) => {
-                        const nuevoConId = { ...nuevo, id: Date.now() };
-                        onAdd(nuevoConId);
-                        onSelect(nuevoConId.id);
+                    onCreated={(nuevoDTO: Organizador) => {
+                        // El backend debería devolver el objeto completo con el ID
+                        const nuevo: Organizador = {
+                            id: nuevoDTO.id || 0,
+                            nombre: nuevoDTO.nombre,
+                            institucion: nuevoDTO.institucion,
+                            correo: nuevoDTO.correo
+                        };
+                        onAdd(nuevo);
+                        onSelect(nuevo.id || 0);
                         setFormVisible(false);
                     }}
                 />

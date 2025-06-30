@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getCarreras, getRequisitos, getSecciones } from "@/app/Services/carreraService";
 import { getOrganizadores } from "@/app/Services/organizadorService";
 import { Evento, eventoInicial } from "@/app/models/CrearEvento";
+import { Organizador } from "@/app/models/Curso";
 
 export function useCrearEvento() {
     const [requisitos, setRequisitos] = useState<{ id: number; nombre: string; }[]>([]);
@@ -11,7 +12,7 @@ export function useCrearEvento() {
     const [imagen, setImagen] = useState<File | null>(null);
     const [subiendo, setSubiendo] = useState(false);
     const [carreras, setCarreras] = useState([]);
-    const [organizadores, setOrganizadores] = useState([]);
+    const [organizadores, setOrganizadores] = useState<Organizador[]>([]);
     const [secciones, setSecciones] = useState([]);
 
     useEffect(() => {
@@ -36,6 +37,7 @@ export function useCrearEvento() {
         setSubiendo,
         carreras,
         organizadores,
+        setOrganizadores,
         secciones,
         requisitos,
         setRequisitos
