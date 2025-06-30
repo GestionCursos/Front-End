@@ -1,11 +1,19 @@
 import { Seccion } from "../models/Sections";
 import { Event } from "../models/Event";
 const API_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/secciones`;
+const CARRERAS_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/carreras`;
 
 // Obtener todas las secciones con sus eventos
 export async function getSecciones(): Promise<Seccion[]> {
     const res = await fetch(API_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('Error al obtener las secciones');
+    return res.json();
+  }
+
+// Obtener todas las carreras/facultades
+export async function getCarreras(): Promise<any[]> {
+    const res = await fetch(CARRERAS_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Error al obtener las carreras');
     return res.json();
   }
 

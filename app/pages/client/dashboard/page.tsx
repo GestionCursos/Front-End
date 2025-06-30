@@ -27,7 +27,9 @@ export default function DashboardPage() {
       if (stored) {
         try {
           const parsed = JSON.parse(stored)
-          setUser(parsed.data ? parsed.data : parsed)
+          const userData = parsed.data ? parsed.data : parsed
+          console.log("Dashboard - Usuario desde localStorage:", userData);
+          setUser(userData)
         } catch {
           setUser(null)
         }
@@ -58,13 +60,15 @@ export default function DashboardPage() {
 
   const renderContent = () => {
     if (!user) return null;
+    console.log("Dashboard - Renderizando contenido, usuario:", user);
     switch (activeSection) {
       case "dashboard":
         return <DashboardMain user={user} />
       case "events":
         return <EnrolledEvents user={user} />
       case "personal":
-        return <PersonalInfo />
+        console.log("Dashboard - Pasando usuario a PersonalInfo:", user);
+        return <PersonalInfo user={user} />
       case "certificates":
         return <Certificates user={user} />
       default:
