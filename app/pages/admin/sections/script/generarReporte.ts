@@ -40,7 +40,7 @@ export class ReportePDF {
     private lugar: string = "Ambato, Ecuador";
 
     constructor(private tipo: TipoReporte, private id: number) {
-        this.imageUrl = "https://scontent.fuio13-1.fna.fbcdn.net/v/t39.30808-6/311586012_528977262569685_3610733298273233828_n.png?_nc_cat=103&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=euFjeum-vB4Q7kNvwEuVwqr&_nc_oc=AdmJ2JwWyL75qHYpfWl0_gPeC-8F_kM3rvDCPiBOSyefaLFMn8iUDVoPtyTe22IYTGc&_nc_zt=23&_nc_ht=scontent.fuio13-1.fna&_nc_gid=B6nKmvVw6eGdaRCURav5tw&oh=00_AfLmuDAWa4v5ygW6usgQ1Da3zjHn1SDYnUkC0e5aLXrn6w&oe=683C025C"; // Usa aquí tu URL real
+        this.imageUrl = "https://scontent.fuio26-1.fna.fbcdn.net/v/t39.30808-6/311586012_528977262569685_3610733298273233828_n.png?_nc_cat=103&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=ze6B1577AYcQ7kNvwFvn1bw&_nc_oc=AdkatIWQayc8GFlvJ06rZanM5JXG7U9nAp5XnEDQGYXDIe8pxkPMXKIGiTZIHxb7c9A&_nc_zt=23&_nc_ht=scontent.fuio26-1.fna&_nc_gid=LCYme4NHNFsjnrH_9Q5nCw&oh=00_AfNBeMqQMfNeRb3a5EC1Aw4A7OzbTFUcGH_jgDuMbbGmBg&oe=6868D55C"; // Usa aquí tu URL real
     }
 
     async init() {
