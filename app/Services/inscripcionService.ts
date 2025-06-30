@@ -1,6 +1,6 @@
 // services/inscripcionService.ts
 
-import Inscripcion from "../models/Inscripcion";
+import Inscripcion, { CreateInscripcionDto } from "../models/Inscripcion";
 import Users from "../models/User";
 import StorageNavegador from "./StorageNavegador";
 
@@ -79,7 +79,7 @@ export async function getInscripcionById(id: number) {
   }
 }
 
-export async function createInscripcion(inscripcionData: any) {
+export async function createInscripcion(inscripcionData: CreateInscripcionDto) {
   try {
     const user = StorageNavegador.getItemWithExpiry("user") as Users;
     const token = user?.token;
@@ -175,5 +175,34 @@ export async function updateEstadoPago(id: number, estado_pago: string, comproba
     return await response.json();
   } catch (error) {
     throw error;
+  }
+}
+
+export async function validarEstudianteInscrito(id_evento: number) {
+  const user = StorageNavegador.getItemWithExpiry("user") as Users;
+  if (!user) {
+    // Si no hay usuario logueado, retorna true (puede ver el evento)
+    return true;
+  }
+  
+  try {
+    const token = user.token;
+    const response = await fetch(`${API_URL}/inscrito/${id_evento}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Error de conexion');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error en validarEstudianteInscrito:', error);
+    // En caso de error, permitir ver el evento
+    return true;
   }
 }

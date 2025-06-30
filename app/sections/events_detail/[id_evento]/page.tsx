@@ -30,6 +30,7 @@ export default function DetalleEventoPage() {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [permisoInscripcion, setPermisoInscripcion] = useState(true);
+  const [estadoInscripcion, setEstadoInscripcion] = useState<"disponible" | "inscrito" | "no_disponible">("disponible");
 
   //para manejar subida de archivos de acuerdo a los requisitos del evento
   const [mostrarFormularioRequisitos, setMostrarFormularioRequisitos] = useState(false);
@@ -39,12 +40,35 @@ export default function DetalleEventoPage() {
   useEffect(() => {
     async function fetchEvento() {
       try {
+        console.log('ID del evento:', id_evento);
         // Busca el evento por ID
         const eventoEncontrado = await sectionsService.getEventoPorId(String(id_evento));
+        console.log('Evento encontrado:', eventoEncontrado);
+        
+        if (!eventoEncontrado) {
+          throw new Error('Evento no encontrado en la respuesta del servidor');
+        }
+        
         setEvento(eventoEncontrado);
-       
-       
+        
+        // Validar inscripción solo si hay usuario logueado
+        try {
+          const inscrito = await inscripcionService.validarEstudianteInscrito(Number(id_evento));
+          console.log('Resultado validación inscripción:', inscrito);
+          if (inscrito && typeof inscrito !== "boolean" && inscrito.mensaje) { 
+            setPermisoInscripcion(false); 
+            setEstadoInscripcion("inscrito");
+            setErrorMessage(inscrito.mensaje);
+          } else {
+            setEstadoInscripcion("disponible");
+          }
+        } catch (validationError) {
+          console.log('Error en validación de inscripción (usuario posiblemente no logueado):', validationError);
+          setEstadoInscripcion("disponible");
+          // No bloquear la carga del evento si falla la validación de inscripción
+        }
       } catch (error) {
+        console.error('Error al buscar evento:', error);
         setEvento(null);
       } finally {
         setLoading(false);
@@ -72,47 +96,81 @@ export default function DetalleEventoPage() {
   }
 
   if (!evento) {
-    return <SiteLayout><div className="text-center py-16">Evento no encontrado.</div></SiteLayout>;
+    return (
+      <SiteLayout>
+        <div className="text-center py-16">
+          <p>Evento no encontrado.</p>
+          <p className="text-sm text-gray-500 mt-2">ID buscado: {id_evento}</p>
+          <Button asChild className="mt-4">
+            <Link href="/">Volver al inicio</Link>
+          </Button>
+        </div>
+      </SiteLayout>
+    );
   }
 
   const duracionDias = calcularDuracion(evento.fechaInicio, evento.fechaFin)
 
   const realizarInscripcion = async (urlCedulaPapeletaV: string | null, urlComprobantePago: string | null, cartaMotivacion: string | null) => {
     try {
-      // Simula una inscripción o llama a tu backend con los archivos
-
-      inscripcionService.createInscripcion({
+      // Crear inscripción con los nombres de propiedades correctos según el DTO del backend
+      await inscripcionService.createInscripcion({
         evento: evento.id_evento,
-        urlCedula: urlCedulaPapeletaV,
-        urlComprobantePago: urlComprobantePago,
-        urlCartaMotivacion: cartaMotivacion,
-      }).then(() => {
-        setShowSuccessModal(true);
-      })
-        .catch((err) => {
-          setErrorMessage("Error al inscribirse: " + (err.message || err));
-          setShowErrorModal(true);
-        });
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("Hubo un error al realizar la inscripción.");
+        urlCedulaPapeletaV: urlCedulaPapeletaV || undefined, // Convertir null a undefined
+        urlComprobantePago: urlComprobantePago || undefined, // Convertir null a undefined
+        cartaMotivacion: cartaMotivacion || undefined, // Convertir null a undefined
+      });
+      
+      // Inscripción exitosa
+      setShowSuccessModal(true);
+      setPermisoInscripcion(false); // Desactivar botón de inscripción
+      setEstadoInscripcion("inscrito");
+      setErrorMessage("Ya estás inscrito en este evento");
+      
+    } catch (err: any) {
+      console.error('Error al inscribirse:', err);
+      setErrorMessage("Error al inscribirse: " + (err.message || err));
       setShowErrorModal(true);
     }
   };
 
-  const handleInscribirse = () => {
+  const handleInscribirse = async () => {
+    // Verificar si el usuario está logueado
+    const usuario = StorageNavegador.getItemWithExpiry("user") as User;
+    if (!usuario) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Verificar si es administrador
+    if (usuario.rol === "admin") {
+      setShowAdminModal(true);
+      return;
+    }
+
+    // Verificar si ya está inscrito antes de proceder
+    try {
+      const validacionInscripcion = await inscripcionService.validarEstudianteInscrito(Number(id_evento));
+      console.log('Validación antes de inscripción:', validacionInscripcion);
+      
+      if (validacionInscripcion && typeof validacionInscripcion !== "boolean" && validacionInscripcion.mensaje) {
+        // Ya está inscrito o hay algún impedimento
+        setPermisoInscripcion(false);
+        setEstadoInscripcion("inscrito");
+        setErrorMessage(validacionInscripcion.mensaje);
+        setShowErrorModal(true);
+        return;
+      } else {
+        setEstadoInscripcion("disponible");
+        setPermisoInscripcion(true);
+      }
+    } catch (validationError) {
+      console.log('Error al validar inscripción:', validationError);
+      // Si hay error en la validación, permitir continuar pero mostrar advertencia
+    }
+
+    // Si llegamos aquí, el usuario puede inscribirse
     if (permisoInscripcion) {
-      const usuario = StorageNavegador.getItemWithExpiry("user") as User;
-      if (!usuario) {
-        setShowLoginModal(true);
-        return;
-      }
-
-      if (usuario.rol === "admin") {
-        setShowAdminModal(true);
-        return;
-      }
-
       if (evento.requisitos && evento.requisitos.length > 0) {
         // Mostrar formulario de requisitos
         setMostrarFormularioRequisitos(true);
@@ -120,11 +178,8 @@ export default function DetalleEventoPage() {
         // Proceder a inscripción directamente
         realizarInscripcion(null, null, null);
       }
-
-      setTimeout(async () => {
-      }, 2250);
     } else {
-      setShowErrorModal(true)
+      setShowErrorModal(true);
     }
   };
 
@@ -188,10 +243,20 @@ export default function DetalleEventoPage() {
                   <p className="text-sm text-muted-foreground mb-6">
                     {evento.costo === 0 ? "Evento gratuito" : "Precio por persona"}
                   </p>
-                  <Button className="w-full" size="lg" onClick={handleInscribirse}>
-                    Inscribirse ahora
+                  <Button 
+                    className="w-full" 
+                    size="lg" 
+                    onClick={handleInscribirse}
+                    disabled={estadoInscripcion === "inscrito"}
+                    variant={estadoInscripcion === "inscrito" ? "secondary" : "default"}
+                  >
+                    {estadoInscripcion === "inscrito" ? "Ya inscrito" : "Inscribirse ahora"}
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-2">Confirma tu participación</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {estadoInscripcion === "inscrito" 
+                      ? "Ya tienes una inscripción en este evento" 
+                      : "Confirma tu participación"}
+                  </p>
                 </div>
               </CardContent>
             </Card>

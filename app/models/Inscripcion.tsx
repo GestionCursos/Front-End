@@ -10,4 +10,12 @@ export interface Inscripcion {
     estado_inscripcion: string;
 }
 
+// Interfaz para crear una nueva inscripción (coincide con el DTO del backend)
+export interface CreateInscripcionDto {
+    evento: number;
+    urlComprobantePago?: string;
+    urlCedulaPapeletaV?: string;
+    cartaMotivacion?: string;
+}
+
 export default Inscripcion;

@@ -8,7 +8,7 @@ export interface Event {
   costo: number;
   categoria: string;
   numeroHoras: number;        // ✅ Cambio: numero_horas → numeroHoras
-  notaAprovacion: number;     // ✅ Cambio: nota_aprovacion → notaAprovacion
+  notaAprovacion: number | null;     // ✅ Cambio: nota_aprovacion → notaAprovacion (puede ser null)
   requiereAsistencia: boolean; // ✅ Cambio: requiere_asistencia → requiereAsistencia
   urlFoto: string;            // ✅ Cambio: url_foto → urlFoto
   visible: boolean;
