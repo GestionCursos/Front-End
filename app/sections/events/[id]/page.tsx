@@ -1,56 +1,23 @@
 "use client";
 export const runtime = 'edge';
 import Link from "next/link"
-import Image from "next/image"
 import { SiteLayout } from "@/components/site-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
-  Calendar,
-  MapPin,
-  Users,
   Search,
-  Clock,
-  DollarSign,
-  CheckCircle,
   ArrowLeft,
-  Star,
-  BookOpen,
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import '../../../globals.css'
 import * as sectionsService from "../../../Services/sectionsService";
 import { EventFilters } from "@/components/ui/filters";
 import { useParams } from "next/navigation";
-
-function formatFecha(fechaStr: string) {
-  if (!fechaStr) return "";
-  const fecha = new Date(fechaStr);
-  return fecha.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatHora(fechaStr: string) {
-  if (!fechaStr) return "";
-  const fecha = new Date(fechaStr);
-  return fecha.toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
+import { EventCard } from "@/components/Eventos/EventCard";
 
 export default function EventsPage() {
 
   const params = useParams();
-  console.log("Todos los params:", params); // 🔍 Ver todos los parámetros
-  console.log("params.id:", params.id); // 🔍 Ver específicamente el id
-  console.log("URL actual:", window.location.pathname); // 🔍 Ver la URL completa
   const idSeccion = params.id as string;
   const [seccion, setSeccion] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -77,33 +44,33 @@ export default function EventsPage() {
     event.categoria.toLowerCase().includes(search.toLowerCase()) ||
     (event.descripcion && event.descripcion.toLowerCase().includes(search.toLowerCase()))
   )
-  .filter(event =>
-    categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(event.categoria?.toLowerCase())
-  )
-  .filter(event =>
-    !modalidad || event.modalidad?.toLowerCase() === modalidad.toLowerCase()
-  )
-  .filter(event => {
-    if (precioSeleccionado.min > 0 && event.costo < precioSeleccionado.min) return false;
-    if (precioSeleccionado.max !== null && event.costo > precioSeleccionado.max) return false;
-    return true;
-  })
-  .filter(event => {
-    // Filtro de fechas
-    if (fechaInicio && new Date(event.fechaInicio) < new Date(fechaInicio)) return false;
-    if (fechaFin && new Date(event.fechaFin) > new Date(fechaFin)) return false;
-    return true;
-  })
-  .filter(event =>
-    tiposEventoSeleccionados.length === 0 || tiposEventoSeleccionados.includes(event.tipoEvento)
-  );
+    .filter(event =>
+      categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(event.categoria?.toLowerCase())
+    )
+    .filter(event =>
+      !modalidad || event.modalidad?.toLowerCase() === modalidad.toLowerCase()
+    )
+    .filter(event => {
+      if (precioSeleccionado.min > 0 && event.costo < precioSeleccionado.min) return false;
+      if (precioSeleccionado.max !== null && event.costo > precioSeleccionado.max) return false;
+      return true;
+    })
+    .filter(event => {
+      // Filtro de fechas
+      if (fechaInicio && new Date(event.fechaInicio) < new Date(fechaInicio)) return false;
+      if (fechaFin && new Date(event.fechaFin) > new Date(fechaFin)) return false;
+      return true;
+    })
+    .filter(event =>
+      tiposEventoSeleccionados.length === 0 || tiposEventoSeleccionados.includes(event.tipoEvento)
+    );
 
   const totalPaginas = Math.ceil(filteredEvents.length / eventosPorPagina);
   const eventosPaginados = filteredEvents.slice(
     (paginaActual - 1) * eventosPorPagina,
     paginaActual * eventosPorPagina
   );
-  
+
   const filters = [
     {
       key: "Categoria" as const,
@@ -113,7 +80,7 @@ export default function EventsPage() {
     },
     {
       key: "Modalidad" as const,
-      label: "Modalidad", 
+      label: "Modalidad",
       options: modalidades,
       type: "radio" as const,
     },
@@ -140,20 +107,19 @@ export default function EventsPage() {
 
   // Datos de para eventos
   useEffect(() => {
-    console.log("idSeccion recibido:", idSeccion);
 
     async function fetchSeccion() {
       try {
         const secciones = await sectionsService.getSecciones();
         const found = secciones.find(s => s.id_seccion.toString() === idSeccion);
-        
+
         if (found) {
           setSeccion(found);
-          
+
           // ✅ Usar fechaEliminacion (no fecha_eliminacion)
           const eventosDeEstaSeccion = found.eventos.filter(e => e.visible && !e.fechaEliminacion);
           setEvents(eventosDeEstaSeccion);
-  
+
           // Extraer filtros solo de los eventos de esta sección
           const categoriasUnicas = [...new Set(
             eventosDeEstaSeccion
@@ -162,7 +128,7 @@ export default function EventsPage() {
               .map(categoria => categoria.trim().toLowerCase())
           )];
           setCategorias(categoriasUnicas);
-  
+
           const modalidadesUnicas = [...new Set(
             eventosDeEstaSeccion
               .map(evento => evento.modalidad)
@@ -170,7 +136,7 @@ export default function EventsPage() {
               .map(modalidad => modalidad.trim().toLowerCase())
           )];
           setModalidades(modalidadesUnicas);
-  
+
           // ✅ Usar tipoEvento (no tipo_evento)
           const tiposEventoUnicos = [...new Set(
             eventosDeEstaSeccion
@@ -189,13 +155,13 @@ export default function EventsPage() {
         setCategoriasLoading(false);
       }
     }
-  
-    if (idSeccion && idSeccion !== 'undefined') { 
+
+    if (idSeccion && idSeccion !== 'undefined') {
       fetchSeccion();
     }
   }, [idSeccion]);
-  
-  
+
+
 
   useEffect(() => {
     // Limpiar filtros al cambiar de sección
@@ -210,12 +176,12 @@ export default function EventsPage() {
     setSearch("");
   }, [idSeccion]);
 
-  
+
   useEffect(() => {
     setPaginaActual(1);
   }, [search, categoriasSeleccionadas, modalidad, precioSeleccionado])
 
-    // Loader mientras carga
+  // Loader mientras carga
   if (loading) {
     return (
       <SiteLayout>
@@ -244,35 +210,73 @@ export default function EventsPage() {
     <SiteLayout>
       {/* Hero Section */}
       <section className="py-12 bg-gradient-to-r from-primary/10 to-primary/5">
-        <div className="container px-4 mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" asChild>
-                <Link href="/" className="flex items-center gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Volver a secciones
-                </Link>
+        <div className="container px-4 mx-auto space-y-8">
+
+          {/* Volver + Buscador */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Button variant="ghost" asChild className="w-max">
+              <Link href="../" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Volver a secciones
+              </Link>
             </Button>
-          </div>  
-          
-            {/* ✅ Solo la barra de búsqueda, sin botón de filtros */}
-            <div className="flex justify-center">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="search" 
-                  placeholder="Buscar eventos..." 
-                  className="pl-10 auth-input" 
-                  value={search} 
-                  onChange={(e) => setSearch(e.target.value)} 
-                />
-              </div>
+
+            <div className="relative w-full max-w-md bg-white rounded-full shadow-sm border px-4 py-2 mx-auto md:mx-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar eventos..."
+                className="pl-10 border-none outline-none w-full bg-transparent"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
           </div>
 
-          {/*Filtros siempre visibles*/}
-          <div className="flex gap-8">
-            {/* Sidebar de filtros siempre visible */}
-            <div className="w-80 flex-shrink-0">
+          {/* Contenido principal: Filtros + Eventos */}
+          <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
+
+            {/* Sidebar de filtros */}
+            {/* Filtros responsivos */}
+            {/* Botón de mostrar filtros en móvil */}
+            <div className="lg:hidden">
+              <Button
+                variant="outline"
+                className="w-full mb-4"
+                onClick={() => setOpenFilter(openFilter ? null : "Categoria")}
+              >
+                {openFilter ? "Ocultar filtros" : "Mostrar filtros"}
+              </Button>
+
+              {openFilter && !categoriasLoading && (
+                <div className="bg-white shadow-sm rounded-xl p-4 border border-muted">
+                  <EventFilters
+                    openFilter={openFilter}
+                    setOpenFilter={setOpenFilter}
+                    categoriasSeleccionadas={categoriasSeleccionadas}
+                    setCategoriasSeleccionadas={setCategoriasSeleccionadas}
+                    modalidad={modalidad}
+                    setModalidad={setModalidad}
+                    precioSeleccionado={precioSeleccionado}
+                    setPrecioSeleccionado={setPrecioSeleccionado}
+                    precioMin={precioMin}
+                    setPrecioMin={setPrecioMin}
+                    precioMax={precioMax}
+                    setPrecioMax={setPrecioMax}
+                    fechaInicio={fechaInicio}
+                    setFechaInicio={setFechaInicio}
+                    fechaFin={fechaFin}
+                    setFechaFin={setFechaFin}
+                    tiposEventoSeleccionados={tiposEventoSeleccionados}
+                    setTiposEventoSeleccionados={setTiposEventoSeleccionados}
+                    filters={filters}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar fijo en escritorio */}
+            <div className="hidden lg:block lg:w-80 bg-white shadow-sm rounded-xl p-4 border border-muted h-fit lg:h-auto">
               {categoriasLoading ? (
                 <div className="text-center py-4">Cargando filtros...</div>
               ) : (
@@ -300,81 +304,43 @@ export default function EventsPage() {
               )}
             </div>
 
-            {/* Contenido principal */}
-            <div className="flex-1">
-              {/* Todos los eventos */}
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Todos los eventos</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {eventosPaginados.map((event) => (
-                    <Card key={event.id_evento} className="bg-white rounded-lg border border-primary/10 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                      <div className="relative h-48">
-                        <Image
-                          src={event.urlFoto || "/placeholder.svg"}
-                          alt={event.nombre}
-                          fill
-                          className="object-cover"
-                        />
-                        <Badge className="absolute top-4 left-4 bg-primary">{event.categoria}</Badge>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="font-bold text-lg mb-2 line-clamp-1">{event.nombre}</h3>
-                        <p className="text-muted-foreground mb-4 text-sm line-clamp-2">{event.descripcion}</p>
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center text-muted-foreground">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            <div>
-                              <p className="font-medium">
-                                {event.fechaInicio
-                                  ? new Date(event.fechaInicio).toLocaleDateString() +
-                                    " " +
-                                    new Date(event.fechaInicio).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                  : "Sin fecha"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center text-muted-foreground">
-                            <MapPin className="h-4 w-4 mr-2" />
-                            <span className="text-sm">{event.modalidad}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-primary">{event.costo ? `$${event.costo}` : "Gratis"}</span>
-                          <Button asChild className="auth-button">
-                            <Link href={`/sections/events_detail/${event.id_evento}`}>Ver detalles</Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-                
-                <div className="flex justify-center mt-10 gap-2">
-                  <button onClick={() => setPaginaActual(paginaActual -1)}
-                    disabled={paginaActual === 1}
-                    className="px-3 py-1 rounded border text-primary disabled:opacity-50">
-                      &lt;
-                  </button>
-                  {Array.from({ length: totalPaginas }, (_, i) => (
-                    <button key={i +1} onClick={() => setPaginaActual(i + 1)} 
-                    className={`px-3 py-1 rounded border ${paginaActual === i + 1 ? 'bg-red-600 text-white' : 'text-primary'}`}>
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button onClick={() => setPaginaActual(paginaActual + 1)} disabled = {paginaActual === totalPaginas}
-                    className="px-3 py-1 rounded border text-primary disabled:opacity-50">
-                      &gt;
-                  </button>
-                </div>
 
+            {/* Lista de eventos */}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-6">Todos los eventos</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {eventosPaginados.map((event) => (
+                  <EventCard key={event.id_evento} event={event} />
+                ))}
               </div>
+
+              <div className="flex flex-wrap justify-center mt-10 gap-2 text-sm">
+                <button onClick={() => setPaginaActual(paginaActual - 1)}
+                  disabled={paginaActual === 1}
+                  className="min-w-[36px] px-3 py-1 rounded border text-primary disabled:opacity-50">
+                  &lt;
+                </button>
+                {Array.from({ length: totalPaginas }, (_, i) => (
+                  <button key={i + 1} onClick={() => setPaginaActual(i + 1)}
+                    className={`min-w-[36px] px-3 py-1 rounded border ${paginaActual === i + 1 ? 'bg-red-600 text-white' : 'text-primary'}`}>
+                    {i + 1}
+                  </button>
+                ))}
+                <button onClick={() => setPaginaActual(paginaActual + 1)} disabled={paginaActual === totalPaginas}
+                  className="min-w-[36px] px-3 py-1 rounded border text-primary disabled:opacity-50">
+                  &gt;
+                </button>
+              </div>
+
             </div>
+          </div>
         </div>
       </section>
 
+
       {/* CTA Section */}
       <section className="py-16 bg-primary">
-        <div className="container px-4 mx-auto text-center">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           <h2 className="text-3xl font-bold text-white mb-4">¿Quieres organizar un evento?</h2>
           <p className="text-white/80 max-w-2xl mx-auto mb-8">
             Si eres un experto en tu campo y quieres compartir tu conocimiento, podemos ayudarte a organizar y promover

@@ -1,11 +1,11 @@
-import Users from "@/app/models/User";
+import User from "@/app/models/User";
 import StorageNavegador from "@/app/Services/StorageNavegador";
 import {
   LayoutDashboard,
   UserPlus,
   Calendar,
   BookOpen,
-  User,
+  User as UserIcon,
   Settings,
   AlertCircleIcon,
   LogOut,
@@ -25,37 +25,35 @@ type SidebarProps = {
 
 const navItems = [
   { id: "pagina_principal", label: "Ir a la página principal", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, rolesPermitidos: ["admin", "admin2", ""] },
   { id: "creacion_admin", label: "Crear Administradores", icon: UserPlus, rolesPermitidos: ["admin"] },
   { id: "eventos", label: "Eventos", icon: Calendar, rolesPermitidos: ["admin", "admin2"] },
-  { id: "seccion", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
-  { id: "autoridades", label: "Autoridades", icon: User, rolesPermitidos: ["admin", "admin2"] },
-  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "Secciones", label: "Secciones", icon: BookOpen, rolesPermitidos: ["admin", "admin2"] },
+  { id: "autoridades", label: "Autoridades", icon: UserIcon, rolesPermitidos: ["admin", "admin2"] },
+  { id: "solicitudes", label: "Solicitudes", icon: AlertCircleIcon, rolesPermitidos: ["desarrollador", "admin2"] },
+  { id: "solicitudes_admin", label: "Solicitudes (Admin)", icon: AlertCircleIcon, rolesPermitidos: ["admin"] },
   { id: "mision_vision", label: "Mision y Vision", icon: Settings, rolesPermitidos: ["admin", "admin2"] },
   { id: "reportes", label: "Reportes", icon: TextSelectIcon, rolesPermitidos: ["admin", "admin2"] },
   { id: "calificaciones", label: "Calificaciones", icon: Edit, rolesPermitidos: ["admin", "admin2"] },
   { id: "inscripciones", label: "Inscripciones", icon: ClipboardList, rolesPermitidos: ["admin", "admin2"] },
-  { id: "gestion_cambio", label: "Gestión de Cambio", icon: User, rolesPermitidos: ["desarrollador"] },
+  { id: "gestion_cambio", label: "Gestión de Cambio", icon: UserIcon, rolesPermitidos: [""] },
+  { id: "estadisticas", label: "Estadisticas", icon: UserIcon, rolesPermitidos: ["desarrollador"] },
+  { id: "auditoria", label: "Auditoria", icon: AlertCircleIcon, rolesPermitidos: ["admin", "admin2", "desarrollador"] },
 ];
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
 
 
-  const [user, setUser] = useState<Users | null>(null);
-  const router = useRouter();
+
+
   const [menuVisible, setMenuVisible] = useState(false);
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
-
+  const [user, setUser] = useState<User | null>(null); // estado inicial
   useEffect(() => {
-    const storedUser = StorageNavegador.getItemWithExpiry("user") as Users | null;
-    if (!storedUser) {
-      router.push("/pages/login");
-    } else {
-      setUser(storedUser);
-    }
-  }, [router]);
-
-
+    const userFromStorage = StorageNavegador.getItemWithExpiry("user") as User | null;
+    setUser(userFromStorage);
+  }, []);
   const handleLogout = () => {
     localStorage.removeItem("user");
     router.push("/");
@@ -69,12 +67,9 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!user) return null;
   return (
     <aside className="w-64 h-screen flex flex-col justify-between bg-white border-r px-4 py-6">
       {/* Navegación */}
@@ -114,11 +109,11 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           onClick={() => setMenuVisible(!menuVisible)}
           className="w-full flex items-center gap-3 text-sm text-gray-800 hover:bg-gray-100 rounded-md px-2 py-2"
         >
-          <User size={18} className="text-red-500" />
-          <img src={user.urlUserImg} alt="perfil" className="w-8 h-8 rounded-full" />
+          <UserIcon size={18} className="text-red-500" />
+          <img src={user?.urlUserImg || "/placeholder-user.jpg"} alt="perfil" className="w-8 h-8 rounded-full" />
           <div className="text-left">
-            <p className="font-semibold">{user.username}</p>
-            <p className="text-xs text-gray-500">{user.email}</p>
+            <p className="font-semibold">{user?.username || "Usuario"}</p>
+            <p className="text-xs text-gray-500">{user?.email || ''}</p>
           </div>
         </button>
 
