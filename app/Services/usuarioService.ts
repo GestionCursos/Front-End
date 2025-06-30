@@ -87,7 +87,7 @@ export async function updateUsuario(uid_firebase: string, userData: Partial<User
     const token = user?.token;
 
     const response = await fetch(`${API_URL}/${uid_firebase}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         "Authorization": `Bearer ${token}`

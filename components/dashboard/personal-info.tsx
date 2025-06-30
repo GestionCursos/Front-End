@@ -6,66 +6,126 @@ import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Badge } from "../ui/badge"
 import User from "../../app/models/User"
-import { User as UserIcon, Mail, Phone, MapPin, GraduationCap, Edit, Save, X, Camera, CreditCard, Shield } from "lucide-react"
+import { User as UserIcon, Mail, Phone, MapPin, Edit, Save, X, Camera, Shield } from "lucide-react"
 import { updateUsuario, getUsuarioByFirebaseUid, getDashboardDataUsuario, updateUsuarioPassword } from "../../app/Services/usuarioService"
+import { getCarreras } from "../../app/Services/sectionsService"
 import { useRouter } from "next/navigation"
 import StorageNavegador from "@/app/Services/StorageNavegador"
 
 
-export function PersonalInfo() {
-  const [user, setUser] = useState<User>()
+export function PersonalInfo({ user: propUser }: { user?: User }) {
+  const [user, setUser] = useState<User | null>(propUser || null)
   const router = useRouter()
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const user = StorageNavegador.getItemWithExpiry("user") as User;
-      if (user) {
-        setUser(user);
-        if (typeof user === "object" && "rol" in user) {
-          // Redirecciona según rol
-          if (["admin", "admin2", "desarrollador"].includes(user.rol)) {
-            router.push("/pages/admin/dashboard");
-          } else {
-            router.push("/pages/client/dashboard");
-          }
-        } else {
-          // Usuario sin rol válido -> login
-          router.push("/pages/login");
-        }
+    if (propUser) {
+      console.log("PersonalInfo - Usuario recibido como prop:", propUser);
+      setUser(propUser);
+    } else if (typeof window !== "undefined") {
+      const storedUser = StorageNavegador.getItemWithExpiry("user") as User;
+      console.log("PersonalInfo - Usuario desde localStorage:", storedUser);
+      if (storedUser) {
+        setUser(storedUser);
       } else {
         // No hay usuario -> login
         router.push("/pages/login");
       }
     }
     setLoading(false);
-  }, []);
-
+  }, [propUser, router]);
 
   const [isEditing, setIsEditing] = useState(false)
+  // Estados para filtros
   const [formData, setFormData] = useState({
     nombres: "",
     apellidos: "",
     correo: "",
-    cedula: "",
     telefono: "",
     direccion: "",
-    carrera: "",
     url_foto: "",
+    idCarrera: ""
   })
+
+  const [carreras, setCarreras] = useState<any[]>([])
+
+  // Configuración dinámica de los campos del formulario
+  const formFields = [
+    {
+      key: "nombres",
+      label: "Nombres",
+      type: "text",
+      icon: UserIcon,
+      required: true,
+      placeholder: "Ingresa tus nombres"
+    },
+    {
+      key: "apellidos", 
+      label: "Apellidos",
+      type: "text",
+      icon: UserIcon,
+      required: true,
+      placeholder: "Ingresa tus apellidos"
+    },
+    {
+      key: "correo",
+      label: "Correo Electrónico",
+      type: "email",
+      icon: Mail,
+      required: true,
+      placeholder: "ejemplo@correo.com"
+    },
+    {
+      key: "telefono",
+      label: "Teléfono",
+      type: "tel",
+      icon: Phone,
+      required: false,
+      placeholder: "Número de teléfono"
+    },
+    {
+      key: "direccion",
+      label: "Dirección",
+      type: "text",
+      icon: MapPin,
+      required: false,
+      placeholder: "Tu dirección completa",
+      fullWidth: true
+    }
+  ]
+
+  // Cargar carreras disponibles
+  useEffect(() => {
+    const cargarCarreras = async () => {
+      try {
+        const carrerasData = await getCarreras()
+        setCarreras(carrerasData)
+      } catch (error) {
+        console.error("Error al cargar carreras:", error)
+      }
+    }
+    cargarCarreras()
+  }, [])
+
   useEffect(() => {
     if (user) {
+      // Obtener el ID de carrera si existe una relación
+      let carreraId = "";
+      if (user.carrera && carreras.length > 0) {
+        const carreraEncontrada = carreras.find(c => c.nombre === user.carrera);
+        carreraId = carreraEncontrada ? carreraEncontrada.id.toString() : "";
+      }
+      
       setFormData({
         nombres: user.nombres || "",
         apellidos: user.apellidos || "",
         correo: user.correo || user.email || "",
-        cedula: user.cedula || "",
         telefono: user.telefono || "",
         direccion: user.direccion || "",
-        carrera: user.carrera || "",
-        url_foto: user.url_foto || user.urlUserImg || ""
+        url_foto: user.url_foto || user.urlUserImg || "",
+        idCarrera: carreraId
       })
     }
-  }, [user])
+  }, [user, carreras])
   const [accountInfo, setAccountInfo] = useState({
     memberSince: "-",
     lastLogin: "-",
@@ -84,36 +144,67 @@ export function PersonalInfo() {
     confirmPassword: ""
   })
   const [showPasswordFields, setShowPasswordFields] = useState(false)
+  const [isPhotoEditing, setIsPhotoEditing] = useState(false)
+
+  const [isDataLoaded, setIsDataLoaded] = useState(false)
+
+  // Efecto separado para actualizar el idCarrera cuando se cargan las carreras
+  useEffect(() => {
+    if (user?.carrera && carreras.length > 0 && isDataLoaded) {
+      const carreraEncontrada = carreras.find(c => c.nombre === user.carrera);
+      if (carreraEncontrada) {
+        setFormData(prev => ({
+          ...prev,
+          idCarrera: carreraEncontrada.id.toString()
+        }));
+      }
+    }
+  }, [carreras, user?.carrera, isDataLoaded]);
 
   useEffect(() => {
     async function fetchStats() {
+      if (!user || isDataLoaded) return;
+      
       setLoading(true)
       setError(null)
       try {
-        if (!user) {
-          return <div className="p-4 text-center">Cargando usuario...</div>
-        }
-
         const uid = user.uid_firebase || user.uid || ""
         if (!uid) {
           setLoading(false)
           return
         }
+        
         // Usar el endpoint avanzado para obtener todo
         const dashboardData = await getDashboardDataUsuario(uid)
+        console.log("Datos del dashboard desde backend:", dashboardData);
+        
         // Actualizar datos de perfil y estadísticas
         if (dashboardData && dashboardData.user) {
+          // Actualizar el estado del usuario con los datos del backend
+          const updatedUser = { ...user, ...dashboardData.user };
+          setUser(updatedUser);
+          
+          // Obtener el ID de carrera si existe una relación y hay carreras cargadas
+          let carreraId = "";
+          if (dashboardData.user.carrera && carreras.length > 0) {
+            const carreraEncontrada = carreras.find(c => c.nombre === dashboardData.user.carrera);
+            carreraId = carreraEncontrada ? carreraEncontrada.id.toString() : "";
+          } else if (dashboardData.user.carrera) {
+            // Si no hay carreras cargadas aún, usar directamente el nombre
+            carreraId = dashboardData.user.carrera;
+          }
+          
           setFormData({
             nombres: dashboardData.user.nombres || "",
             apellidos: dashboardData.user.apellidos || "",
             correo: dashboardData.user.correo || dashboardData.user.email || "",
-            cedula: dashboardData.user.cedula || "",
             telefono: dashboardData.user.telefono || "",
             direccion: dashboardData.user.direccion || "",
-            carrera: dashboardData.user.carrera || "",
             url_foto: dashboardData.user.url_foto || dashboardData.user.urlUserImg || "",
+            idCarrera: carreraId
           })
         }
+        
         // Estadísticas
         const eventos = dashboardData.eventosInscritos || []
         setAccountInfo({
@@ -121,37 +212,45 @@ export function PersonalInfo() {
           lastLogin: "-",   // Puedes mapear si el backend lo provee
           totalEvents: eventos.length,
           completedEvents: eventos.filter((i: any) => i.estado_inscripcion === 'completado').length,
-          certificates: eventos.filter((i: any) => i.estado_inscripcion === 'completado' && i.nota >= 70).length, // Ejemplo
+          certificates: eventos.filter((i: any) => i.estado_inscripcion === 'completado' && i.nota >= 70).length,
           attendances: eventos.reduce((sum: any, i: any) => sum + (i.porcentaje_asistencia || 0), 0)
         })
+        
+        setIsDataLoaded(true)
       } catch (e: any) {
         setError(e.message || "Error cargando estadísticas")
       }
       setLoading(false)
     }
     fetchStats()
-  }, [user])
+  }, [user?.uid_firebase, user?.uid]) // Solo depender del UID, no del objeto user completo
 
   const reloadUserData = async () => {
-    if (!user) {
-      return <div className="p-4 text-center">Cargando usuario...</div>
-    }
+    if (!user) return;
 
     setLoading(true)
     setError(null)
     try {
       const uid = user.uid_firebase || user.uid || ""
       if (!uid) return
+      
       const backendUser = await getUsuarioByFirebaseUid(uid)
+      
+      // Obtener el ID de carrera si existe una relación
+      let carreraId = "";
+      if (backendUser.idCarrera?.nombre && carreras.length > 0) {
+        const carreraEncontrada = carreras.find(c => c.nombre === backendUser.idCarrera.nombre);
+        carreraId = carreraEncontrada ? carreraEncontrada.id.toString() : "";
+      }
+      
       setFormData({
         nombres: backendUser.nombres || "",
         apellidos: backendUser.apellidos || "",
         correo: backendUser.correo || backendUser.email || "",
-        cedula: backendUser.cedula || "",
         telefono: backendUser.telefono || "",
         direccion: backendUser.direccion || "",
-        carrera: backendUser.carrera || "",
         url_foto: backendUser.url_foto || backendUser.urlUserImg || "",
+        idCarrera: carreraId
       })
     } catch (e: any) {
       setError("No se pudo recargar los datos del usuario")
@@ -171,33 +270,75 @@ export function PersonalInfo() {
     setSaving(true)
     setError(null)
     setSuccess(null)
+    
     try {
       if (!user) {
         throw new Error("No se encontró el usuario")
+      }
+
+      // Validaciones dinámicas basadas en la configuración de campos
+      for (const field of formFields) {
+        if (field.required) {
+          const value = formData[field.key as keyof typeof formData]
+          if (!value || !value.toString().trim()) {
+            throw new Error(`${field.label} es requerido`)
+          }
+        }
+      }
+      
+      // Validar formato de correo
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.correo)) {
+        throw new Error("El formato del correo no es válido")
       }
 
       const uid = user.uid_firebase || user.uid || "";
       if (!uid) {
         throw new Error("No se encontró el UID del usuario")
       }
-      if (!uid) throw new Error("No se encontró el UID del usuario")
+
+      // Preparar datos para enviar al backend
+      const dataToSend: any = { ...formData };
+      
+      // Si hay una carrera seleccionada, convertir el ID a nombre
+      if (formData.idCarrera && carreras.length > 0) {
+        const carreraSeleccionada = carreras.find(c => c.id.toString() === formData.idCarrera);
+        if (carreraSeleccionada) {
+          dataToSend.carrera = carreraSeleccionada.nombre;
+        }
+      }
+      
+      // Remover idCarrera ya que el backend espera 'carrera'
+      delete dataToSend.idCarrera;
+
+      // Actualizar datos del usuario
+      await updateUsuario(uid, dataToSend);
+      
       // If password fields are shown and filled, validate and update password
       if (showPasswordFields && (passwordFields.currentPassword || passwordFields.newPassword || passwordFields.confirmPassword)) {
         if (!passwordFields.currentPassword || !passwordFields.newPassword || !passwordFields.confirmPassword) {
           throw new Error("Completa todos los campos de contraseña")
         }
+        if (passwordFields.newPassword.length < 6) {
+          throw new Error("La nueva contraseña debe tener al menos 6 caracteres")
+        }
         if (passwordFields.newPassword !== passwordFields.confirmPassword) {
           throw new Error("Las contraseñas nuevas no coinciden")
         }
-        // Call password update service (must exist in usuarioService)
+        // Call password update service
         await updateUsuarioPassword(uid, passwordFields.currentPassword, passwordFields.newPassword)
-        setSuccess("Contraseña actualizada correctamente.")
+        setSuccess("Perfil y contraseña actualizados correctamente.")
+      } else {
+        setSuccess("Perfil actualizado correctamente.")
       }
-      // Update user data
+
+      // Update local storage with new data
+      const updatedUser = { ...user, ...formData };
+      StorageNavegador.saveToLocalStorageWithExpiry("user", updatedUser, 24 * 60 * 60 * 1000); // 24 horas
+
       setIsEditing(false)
       setShowPasswordFields(false)
       setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
-      setSuccess("Perfil actualizado correctamente.")
       await reloadUserData()
     } catch (e: any) {
       setError(e.message || "Error guardando cambios")
@@ -206,30 +347,71 @@ export function PersonalInfo() {
   }
 
   const handleCancel = () => {
-    if (!user) {
-      return <div className="p-4 text-center">Cargando usuario...</div>
+    if (!user) return;
+
+    // Obtener el ID de carrera si existe una relación
+    let carreraId = "";
+    if (user.carrera && carreras.length > 0) {
+      const carreraEncontrada = carreras.find(c => c.nombre === user.carrera);
+      carreraId = carreraEncontrada ? carreraEncontrada.id.toString() : "";
     }
 
     setFormData({
       nombres: user.nombres || "",
       apellidos: user.apellidos || "",
       correo: user.correo || user.email || "",
-      cedula: user.cedula || "",
       telefono: user.telefono || "",
       direccion: user.direccion || "",
-      carrera: user.carrera || "",
       url_foto: user.url_foto || user.urlUserImg || "",
+      idCarrera: carreraId
     })
     setIsEditing(false)
     setShowPasswordFields(false)
+    setIsPhotoEditing(false)
     setPasswordFields({ currentPassword: "", newPassword: "", confirmPassword: "" })
   }
 
   return (
     <div className="space-y-6">
-      {loading && <div className="p-4 text-center">Cargando información...</div>}
-      {error && <div className="p-4 text-center text-red-600">{error}</div>}
-      {success && <div className="p-4 text-center text-green-600">{success}</div>}
+      {loading && (
+        <div className="p-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p>Cargando información...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <X className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <Save className="h-5 w-5 text-green-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Éxito</h3>
+              <div className="mt-2 text-sm text-green-700">
+                <p>{success}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Información Personal</h1>
@@ -271,40 +453,68 @@ export function PersonalInfo() {
                   {formData.url_foto ? (
                     <img
                       src={formData.url_foto}
-                      alt="Perfil"
+                      alt="Foto de perfil"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Si la imagen falla al cargar, mostrar el icono por defecto
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
                   ) : (
                     <UserIcon className="h-16 w-16 text-primary" />
                   )}
+                  {formData.url_foto && (
+                    <UserIcon className="h-16 w-16 text-primary hidden" />
+                  )}
                 </div>
                 {isEditing && (
-                  <Button
-                    size="sm"
-                    className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0"
-                    variant="default"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
+                  <div className="absolute bottom-0 right-0">
+                    <Button
+                      size="sm"
+                      className="rounded-full w-8 h-8 p-0"
+                      variant="default"
+                      title="Cambiar foto de perfil"
+                      onClick={() => setIsPhotoEditing(!isPhotoEditing)}
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
+              
+              {/* Editor de URL de foto */}
+              {isEditing && isPhotoEditing && (
+                <div className="space-y-2">
+                  <Label htmlFor="photo-url">URL de la foto de perfil</Label>
+                  <Input
+                    id="photo-url"
+                    type="url"
+                    value={formData.url_foto}
+                    onChange={(e) => handleInputChange("url_foto", e.target.value)}
+                    placeholder="https://ejemplo.com/tu-foto.jpg"
+                    className="auth-input"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Ingresa la URL de tu foto de perfil
+                  </p>
+                </div>
+              )}
               <div>
                 <h3 className="font-semibold text-lg text-foreground">
-                  {`${formData.nombres} ${formData.apellidos}` || user?.username}
+                  {(formData.nombres && formData.apellidos) ? 
+                    `${formData.nombres} ${formData.apellidos}` : 
+                    (user?.username || "Usuario")
+                  }
                 </h3>
                 <div className="flex justify-center mt-2">
                   {user?.rol && (
-                    <div className="flex justify-center mt-2">
-                      <Badge className={`${user.rol} text-xs`}>
-                        {user.rol}
-                      </Badge>
-                    </div>
+                    <Badge className={`${user.rol} text-xs`}>
+                      {user.rol.charAt(0).toUpperCase() + user.rol.slice(1)}
+                    </Badge>
                   )}
-
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Miembro desde {accountInfo.memberSince}
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -316,10 +526,9 @@ export function PersonalInfo() {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Estado</span>
-                <Badge className={`${user?.estado || ""} text-xs`}>
-                  ACTIVO
+                <Badge className={`${user?.estado === 'activo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs`}>
+                  {user?.estado?.toUpperCase() || 'ACTIVO'}
                 </Badge>
-
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Eventos totales</span>
@@ -334,8 +543,13 @@ export function PersonalInfo() {
                 <span className="font-semibold">{accountInfo.certificates}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Asistencias</span>
-                <span className="font-semibold">{accountInfo.attendances}</span>
+                <span className="text-muted-foreground">% Asistencia promedio</span>
+                <span className="font-semibold">
+                  {accountInfo.totalEvents > 0 ? 
+                    Math.round(accountInfo.attendances / accountInfo.totalEvents) + '%' : 
+                    '0%'
+                  }
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Último acceso</span>
@@ -351,137 +565,86 @@ export function PersonalInfo() {
               <CardTitle>Datos Personales</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Formulario dinámico */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nombres">Nombres</Label>
-                  {isEditing ? (
-                    <Input
-                      id="nombres"
-                      value={formData.nombres}
-                      onChange={(e) => handleInputChange("nombres", e.target.value)}
-                      className="auth-input"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <UserIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.nombres}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="apellidos">Apellidos</Label>
-                  {isEditing ? (
-                    <Input
-                      id="apellidos"
-                      value={formData.apellidos}
-                      onChange={(e) => handleInputChange("apellidos", e.target.value)}
-                      className="auth-input"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <UserIcon className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.apellidos}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="correo">Correo Electrónico</Label>
-                  {isEditing ? (
-                    <Input
-                      id="correo"
-                      type="email"
-                      value={formData.correo}
-                      onChange={(e) => handleInputChange("correo", e.target.value)}
-                      className="auth-input"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.correo}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cedula">Cédula</Label>
-                  {isEditing ? (
-                    <Input
-                      id="cedula"
-                      value={formData.cedula}
-                      onChange={(e) => handleInputChange("cedula", e.target.value)}
-                      className="auth-input"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.cedula}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="telefono">Teléfono</Label>
-                  {isEditing ? (
-                    <Input
-                      id="telefono"
-                      value={formData.telefono}
-                      onChange={(e) => handleInputChange("telefono", e.target.value)}
-                      className="auth-input"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.telefono}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="carrera">Carrera</Label>
-                  {isEditing ? (
-                    <Select
-                      value={formData.carrera}
-                      onValueChange={(value) => handleInputChange("carrera", value)}
-                    >
-                      <SelectTrigger className="auth-input">
-                        <SelectValue placeholder="Selecciona tu carrera" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ingenieria_sistemas">Ingeniería de Sistemas</SelectItem>
-                        <SelectItem value="ingenieria_civil">Ingeniería Civil</SelectItem>
-                        <SelectItem value="ingenieria_industrial">Ingeniería Industrial</SelectItem>
-                        <SelectItem value="administracion">Administración de Empresas</SelectItem>
-                        <SelectItem value="contaduria">Contaduría Pública</SelectItem>
-                        <SelectItem value="derecho">Derecho</SelectItem>
-                        <SelectItem value="psicologia">Psicología</SelectItem>
-                        <SelectItem value="medicina">Medicina</SelectItem>
-                        <SelectItem value="otra">Otra</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <span>{formData.carrera}</span>
-                    </div>
-                  )}
-                </div>
+                {formFields.filter(field => !field.fullWidth).map((field) => (
+                  <div key={field.key} className="space-y-2">
+                    <Label htmlFor={field.key}>
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    {isEditing ? (
+                      <Input
+                        id={field.key}
+                        type={field.type}
+                        value={formData[field.key as keyof typeof formData]}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="auth-input"
+                        required={field.required}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                        <field.icon className="h-4 w-4 text-muted-foreground" />
+                        <span>{formData[field.key as keyof typeof formData] || "No especificado"}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
+              {/* Campos de ancho completo */}
+              {formFields.filter(field => field.fullWidth).map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label htmlFor={field.key}>
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  {isEditing ? (
+                    <Input
+                      id={field.key}
+                      type={field.type}
+                      value={formData[field.key as keyof typeof formData]}
+                      onChange={(e) => handleInputChange(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="auth-input"
+                      required={field.required}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                      <field.icon className="h-4 w-4 text-muted-foreground" />
+                      <span>{formData[field.key as keyof typeof formData] || "No especificado"}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Campo de carrera dinámico */}
               <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
+                <Label htmlFor="idCarrera">Carrera</Label>
                 {isEditing ? (
-                  <Input
-                    id="direccion"
-                    value={formData.direccion}
-                    onChange={(e) => handleInputChange("direccion", e.target.value)}
-                    className="auth-input"
-                  />
+                  <Select
+                    value={formData.idCarrera || "sin-especificar"}
+                    onValueChange={(value) => handleInputChange("idCarrera", value === "sin-especificar" ? "" : value)}
+                  >
+                    <SelectTrigger className="auth-input">
+                      <SelectValue placeholder="Selecciona tu carrera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sin-especificar">Sin especificar</SelectItem>
+                      {carreras.map((carrera) => (
+                        <SelectItem key={carrera.id} value={carrera.id.toString()}>
+                          {carrera.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{formData.direccion}</span>
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {user?.carrera || "No especificado"}
+                    </span>
                   </div>
                 )}
               </div>
@@ -499,7 +662,7 @@ export function PersonalInfo() {
                 </div>
               </div>
 
-
+              {/* Campos de contraseña condicionales */}
               {isEditing && showPasswordFields && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -539,52 +702,7 @@ export function PersonalInfo() {
               )}
             </CardContent>
           </Card>
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Configuración de Cuenta</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Notificaciones por email</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Recibe actualizaciones sobre tus eventos y certificados
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configurar
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Privacidad del perfil</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Controla quién puede ver tu información
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Gestionar
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div>
-                  <h4 className="font-medium">Cambiar contraseña</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Actualiza tu contraseña de acceso
-                  </p>
-                </div>
-                {isEditing ? (
-                  <Button variant="outline" size="sm" onClick={() => setShowPasswordFields(v => !v)}>
-                    {showPasswordFields ? "Ocultar" : "Editar"}
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" disabled>
-                    Cambiar
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </div>
     </div>
